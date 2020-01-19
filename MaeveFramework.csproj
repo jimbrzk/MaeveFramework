@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <Authors>Jakub Imbrzykowski</Authors>
+    <Description />
+    <RepositoryUrl>https://gitlab.com/kubala156/MaeveFramework</RepositoryUrl>
+    <PackageTags>Helpers, .NET, Plugins, Schduler</PackageTags>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+    <PackageReference Include="NLog" Version="4.6.8" />
+  </ItemGroup>
+
+</Project>
