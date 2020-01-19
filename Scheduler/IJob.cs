@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace TachankaScheduler
+namespace MaeveFramework.Scheduler
 {
     public interface IJob
     {
