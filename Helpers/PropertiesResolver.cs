@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace MaeveFramework.StringHelpers
+namespace MaeveFramework.Helpers
 {
     public static class PropertiesResolver
     {
