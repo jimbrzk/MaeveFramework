@@ -31,7 +31,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\MaeveFramework.SDK\MaeveFramework.SDK.csproj" />
+    <ProjectReference Include="..\SDK\MaeveFramework.SDK.csproj" />
   </ItemGroup>
 
 </Project>

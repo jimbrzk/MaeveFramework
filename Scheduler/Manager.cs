@@ -106,6 +106,9 @@ namespace MaeveFramework.Scheduler
         /// <param name="repeat">If null will be run for one time only</param>
         public static Guid CreateJob(JobBase job, Schedule schedule)
         {
+            if (job.Schedule == null)
+                job.Schedule = schedule;
+
             if (_jobsList.Count > 20)
                 throw new ArgumentException("Can't create more then 20 jobs!");
 
