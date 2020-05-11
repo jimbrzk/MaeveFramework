@@ -2,18 +2,21 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Diagnostics;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
-using MaeveFramework.SDK.Plugins;
-using MaeveFramework.SDK.Scheduler;
-using MaeveFramework.SDK.Scheduler.Abstractions;
+using MaeveFramework.Plugins;
+using MaeveFramework.Scheduler;
+using MaeveFramework.Scheduler.Abstractions;
 
 namespace MaeveFramework.Scheduler
 {
     public class Manager
     {
-        private static List<JobDetails> _jobsList;
+        private static Dictionary<Guid, JobDetails> _jobsList;
+
+        public static List<JobDetails> Jobs => _jobsList.Values?.ToList();
 
         private static ILogger _logger;
         private static Dictionary<Guid, DateTime> _jobsToRestart;
@@ -28,7 +31,7 @@ namespace MaeveFramework.Scheduler
                 _logger = LogManager.CreateLogger("MaeveFramework.Scheduler");
 
             if (_jobsList == null)
-                _jobsList = new List<JobDetails>();
+                _jobsList = new Dictionary<Guid, JobDetails>();
 
             if (_jobsToRestart == null)
                 _jobsToRestart = new Dictionary<Guid, DateTime>();
@@ -55,19 +58,19 @@ namespace MaeveFramework.Scheduler
 
                 foreach (var job in _jobsToRestart)
                 {
-                    var jobObject = _jobsList.Find(x => x.Guid == job.Key);
+                    var jobObject = _jobsList[job.Key];
 
-                    if (DateTime.Now >= job.Value && jobObject.State == JobState.Crash)
+                    if (DateTime.Now >= job.Value && jobObject.Job.State == JobState.Crash)
                     {
                         try
                         {
-                            RunJob(_jobsList.Find(x => x.Guid == job.Key));
+                            RunJob(jobObject);
                         }
                         catch (Exception ex)
                         {
-                            _logger.Error(ex, $"Exception on crashed {jobObject.Name} job restart - next restart try in {JOBRESTARTNEXTTRYMIN} minutes");
+                            _logger.Error(ex, $"Exception on crashed {jobObject.Job.Name} job restart - next restart try in {JOBRESTARTNEXTTRYMIN} minutes");
 
-                            _jobsList.Find(x => x.Guid == job.Key).State = JobState.Crash;
+                            _jobsList[job.Key].Job.State = JobState.Crash;
                             _jobsToRestart[job.Key] = DateTime.Now.AddMinutes(JOBRESTARTNEXTTRYMIN);
                         }
                     }
@@ -79,59 +82,25 @@ namespace MaeveFramework.Scheduler
             }
         }
 
-        public static List<JobDetails> GetJobsDetailsList()
-        {
-            return _jobsList;
-        }
-
-        public static JobDetails GetJobDetail(string name)
-        {
-            return _jobsList.Find(x => x.Name.Equals(name));
-        }
-
-        public static JobDetails GetJobDetail(Guid guid)
-        {
-            return _jobsList.Find(x => x.Guid.Equals(guid));
-        }
-
-        public static Guid CreateJob(JobBase job, string schedule)
-        {
-            return CreateJob(job, ScheduleString.Parse(schedule));
-        }
-
         /// <summary>
         /// Create new job to run
         /// </summary>
         /// <param name="job"></param>
-        /// <param name="repeat">If null will be run for one time only</param>
-        public static Guid CreateJob(JobBase job, Schedule schedule)
+        public static Guid CreateJob(JobBase job)
         {
-            if (job.Schedule == null)
-                job.Schedule = schedule;
-
-            if (_jobsList.Count > 20)
-                throw new ArgumentException("Can't create more then 20 jobs!");
-
-            if (_jobsList.Exists(x => x.Name == job.Name))
+            if (_jobsList.Values.Any(x => x.Job.Name.Equals(job.Name, StringComparison.InvariantCultureIgnoreCase)))
                 throw new ArgumentException($"Job with name {job.Name} is already exist!");
 
-            JobDetails jobDetail = new JobDetails()
-            {
-                Name = job.Name,
-                State = JobState.NotStarted,
-                Schedule = schedule,
-                Guid = Guid.NewGuid(),
-                Job = job
-            };
-            jobDetail.NextRun = schedule.GetNextRun();
+            var jobDetail = new JobDetails(job);
+            jobDetail.NextRun = job.Schedule.GetNextRun();
             jobDetail.JobCancelToken = new CancellationTokenSource();
 
             Task task = new Task(CreateAction(job, jobDetail), jobDetail.JobCancelToken.Token, TaskCreationOptions.RunContinuationsAsynchronously);
             jobDetail.SystemTask = task;
 
-            _jobsList.Add(jobDetail);
+            _jobsList.Add(job.Guid, jobDetail);
 
-            return jobDetail.Guid;
+            return jobDetail.Job.Guid;
         }
 
         /// <summary>
@@ -139,7 +108,7 @@ namespace MaeveFramework.Scheduler
         /// </summary>
         public static void RunJobs()
         {
-            foreach (JobDetails job in _jobsList)
+            foreach (JobDetails job in _jobsList.Values)
             {
                 RunJob(job);
             }
@@ -147,15 +116,15 @@ namespace MaeveFramework.Scheduler
 
         public static void RunJob(Guid guid)
         {
-            var job = _jobsList.Find(x => x.Guid == guid);
+            var job = _jobsList[guid];
 
             RunJob(job);
         }
 
         private static void RunJob(JobDetails job)
         {
-            if ((job.State == JobState.NotStarted || job.State == JobState.Stopped ||
-                 job.State == JobState.Crash) && job.SystemTask.Status != TaskStatus.Running)
+            if ((job.Job.State == JobState.NotStarted || job.Job.State == JobState.Stopped ||
+                 job.Job.State == JobState.Crash) && job.SystemTask.Status != TaskStatus.Running)
             {
                 if (job.SystemTask.IsCompleted || job.SystemTask.IsFaulted)
                 {
@@ -168,7 +137,7 @@ namespace MaeveFramework.Scheduler
                         TaskCreationOptions.RunContinuationsAsynchronously);
                     job.SystemTask = task;
 
-                    _jobsList.Insert(_jobsList.FindIndex(x => x.Guid == job.Guid), job);
+                    _jobsList[job.Job.Guid] = job;
                 }
 
                 job.SystemTask.Start();
@@ -181,53 +150,44 @@ namespace MaeveFramework.Scheduler
 
         public static void StopJob(Guid guid)
         {
-            var job = _jobsList.Find(x => x.Guid == guid);
-
-            StopJob(job);
-        }
-
-        private static void StopJob(JobDetails job)
-        {
-            if (job.SystemTask.Status != TaskStatus.Canceled)
-            {
-                _jobsList.Find(x => x.Guid == job.Guid).JobCancelToken.Cancel(false);
-            }
+            var job = _jobsList[guid];
+            job.JobCancelToken?.Cancel(false);
         }
 
         private static Action CreateAction(JobBase job, JobDetails jobDetail)
         {
             Action action = new Action(() =>
             {
-                Thread.CurrentThread.Name = $"MaeveFramework.Scheduler_{jobDetail.Name}";
+                Thread.CurrentThread.Name = $"MaeveFramework.Scheduler_{jobDetail.Job.Name}";
 
                 try
                 {
                     // OnStart
-                    _jobsList.Find(x => x.Guid == jobDetail.Guid).State = JobState.Starting;
+                    _jobsList[job.Guid].Job.State = JobState.Starting;
                     job.OnStart();
 
-                    _jobsList.Find(x => x.Guid == jobDetail.Guid).NextRun = jobDetail.Schedule.GetNextRun(true);
+                    _jobsList[job.Guid].NextRun = jobDetail.Job.Schedule.GetNextRun(true);
 
-                    _logger.Debug($"Job {jobDetail.Name} started, run scheduled at {_jobsList.Find(x => x.Guid == jobDetail.Guid).NextRun}");
+                    _logger.Debug($"Job {jobDetail.Job.Name} started, run scheduled at {_jobsList[job.Guid].NextRun}");
 
-                    while (_jobsList.Find(x => x.Guid == jobDetail.Guid).State != JobState.Stopping || !jobDetail.JobCancelToken.Token.IsCancellationRequested)
+                    while (_jobsList[job.Guid].Job.State != JobState.Stopping || !jobDetail.JobCancelToken.Token.IsCancellationRequested)
                     {
-                        bool isJobTime = (DateTime.Now >= _jobsList.Find(x => x.Guid == jobDetail.Guid).NextRun.Value);
+                        bool isJobTime = (DateTime.Now >= _jobsList[job.Guid].NextRun.Value);
 
                         if (isJobTime)
                         {
                             if (jobDetail.LastRun.GetValueOrDefault(DateTime.MinValue).AddSeconds(1) < DateTime.Now)
                             {
-                                _jobsList.Find(x => x.Guid == jobDetail.Guid).LastRun = DateTime.Now;
-                                _jobsList.Find(x => x.Guid == jobDetail.Guid).State = JobState.Working;
+                                _jobsList[job.Guid].LastRun = DateTime.Now;
+                                _jobsList[job.Guid].Job.State = JobState.Working;
 
                                 job.Job();
 
-                                _jobsList.Find(x => x.Guid == jobDetail.Guid).NextRun = jobDetail.Schedule.GetNextRun();
+                                _jobsList[job.Guid].NextRun = jobDetail.Job.Schedule.GetNextRun();
 
-                                _jobsList.Find(x => x.Guid == jobDetail.Guid).State = JobState.Idle;
+                                _jobsList[job.Guid].Job.State = JobState.Idle;
 
-                                _logger.Debug($"Job {jobDetail.Name} is now idle, next run at {_jobsList.Find(x => x.Guid == jobDetail.Guid).NextRun}");
+                                _logger.Debug($"Job {jobDetail.Job.Name} is now idle, next run at {_jobsList[job.Guid].NextRun}");
                             }
                             else
                             {
@@ -235,14 +195,7 @@ namespace MaeveFramework.Scheduler
                             }
                         }
 
-                        if (jobDetail.Schedule.OneTime)
-                        {
-                            break;
-                        }
-
-                        Thread.Sleep(1000);
-
-                        jobDetail.JobCancelToken.Token.ThrowIfCancellationRequested();
+                        jobDetail.JobCancelToken.Token.WaitHandle.WaitOne(jobDetail.NextRun.Value.Subtract(DateTime.Now));
                     }
 
                     // OnStop
@@ -250,37 +203,37 @@ namespace MaeveFramework.Scheduler
                 }
                 catch (OperationCanceledException ex)
                 {
-                    _logger.Error(ex, $"Stopping job {jobDetail.Name}, reason: {ex.Message}");
+                    _logger.Error(ex, $"Stopping job {jobDetail.Job.Name}, reason: {ex.Message}");
 
-                    _jobsList.Find(x => x.Guid == jobDetail.Guid).State = JobState.Stopping;
+                    _jobsList[job.Guid].Job.State = JobState.Stopping;
                     job.OnStop();
 
-                    _jobsList.Find(x => x.Guid == jobDetail.Guid).State = JobState.Stopped;
+                    _jobsList[job.Guid].Job.State = JobState.Stopped;
 
-                    if (_jobsToRestart.ContainsKey(jobDetail.Guid))
-                        _jobsToRestart.Remove(jobDetail.Guid);
+                    if (_jobsToRestart.ContainsKey(jobDetail.Job.Guid))
+                        _jobsToRestart.Remove(jobDetail.Job.Guid);
                 }
                 catch (Exception ex)
                 {
                     _logger.Error(ex, "Unhandled job exception");
 
-                    JobState currentState = _jobsList.Find(x => x.Guid == jobDetail.Guid).State.Value;
-                    _jobsList.Find(x => x.Guid == jobDetail.Guid).State = JobState.Crash;
+                    JobState currentState = _jobsList[job.Guid].Job.State;
+                    _jobsList[job.Guid].Job.State = JobState.Crash;
 
                     if (currentState != JobState.Stopped || currentState != JobState.Stopping)
                     {
                         DateTime restartDateTime = DateTime.Now.AddSeconds(JOBRESTARTAFTERSEC);
 
-                        if (_jobsToRestart.ContainsKey(jobDetail.Guid))
+                        if (_jobsToRestart.ContainsKey(jobDetail.Job.Guid))
                         {
                             restartDateTime = restartDateTime.AddMinutes(JOBRESTARTNEXTTRYMIN);
 
-                            _jobsToRestart.Remove(jobDetail.Guid);
-                            _jobsToRestart.Add(jobDetail.Guid, restartDateTime);
+                            _jobsToRestart.Remove(jobDetail.Job.Guid);
+                            _jobsToRestart.Add(jobDetail.Job.Guid, restartDateTime);
                         }
                         else
                         {
-                            _jobsToRestart.Add(jobDetail.Guid, restartDateTime);
+                            _jobsToRestart.Add(jobDetail.Job.Guid, restartDateTime);
                         }
 
                         _jobRestartTimer.Start();
@@ -288,9 +241,9 @@ namespace MaeveFramework.Scheduler
                 }
                 finally
                 {
-                    _logger.Debug($"Job {jobDetail.Name} is now {_jobsList.Find(x => x.Guid == jobDetail.Guid).State}");
+                    _logger.Debug($"Job {jobDetail.Job.Name} is now {_jobsList[job.Guid].Job.State}");
 
-                    _jobsList.Find(x => x.Guid == jobDetail.Guid).JobCancelToken.CancelAfter(200);
+                    _jobsList[job.Guid].JobCancelToken.CancelAfter(200);
                 }
             });
 
@@ -304,13 +257,23 @@ namespace MaeveFramework.Scheduler
         {
             _logger.Warn("Stopping all jobs");
 
-            foreach (var job in _jobsList)
+            foreach (var job in _jobsList.Values)
             {
-                job.State = JobState.Stopped;
+                job.Job.State = JobState.Stopped;
 
                 if (job.JobCancelToken.Token.CanBeCanceled)
                     job.JobCancelToken.Cancel(false);
             }
+        }
+
+        public static ILogger GetJobLogger<T>()
+        {
+            return _jobsList.Values.FirstOrDefault(x => x.Job.GetType().Name == typeof(T).Name).Job.Logger;
+        }
+
+        public static T GetJobOptions<T>(string jobName)
+        {
+            return _jobsList.Values.FirstOrDefault(x => x.Job.Options.GetType().Name == typeof(T).Name && x.Job.Name == jobName).Job.GetJobOptions<T>();
         }
     }
 }

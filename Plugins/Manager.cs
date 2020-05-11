@@ -6,8 +6,8 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.Loader;
 using System.Text;
-using MaeveFramework.SDK.Plugins;
-using MaeveFramework.SDK.Scheduler;
+using MaeveFramework.Plugins;
+using MaeveFramework.Scheduler;
 
 namespace MaeveFramework.Plugins
 {
@@ -80,7 +80,7 @@ namespace MaeveFramework.Plugins
                             if (Activator.CreateInstance(definedType) is JobBase result)
                             {
                                 _logger.Debug($"Loading job: {result.Name}");
-                                Scheduler.Manager.CreateJob(result, result.Schedule);
+                                Scheduler.Manager.CreateJob(result);
                             }
                         }
                     }
