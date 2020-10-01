@@ -4,15 +4,17 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <Authors>Jakub Imbrzykowski</Authors>
     <Description />
-    <RepositoryUrl>https://gitlab.com/maeveframework/Framework</RepositoryUrl>
+    <RepositoryUrl>https://github.com/MaeveFramework/Framework/</RepositoryUrl>
     <PackageTags>Helpers, .NET, Plugins, Schduler</PackageTags>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <RepositoryType>Git</RepositoryType>
+    <RepositoryType>GitHub</RepositoryType>
     <PackageProjectUrl>https://gitlab.com/maeveframework/</PackageProjectUrl>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <Copyright>MIT License © 2020</Copyright>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>maevestrongkey.pfx</AssemblyOriginatorKeyFile>
+    <Company>Jakub Imbrzykowski TioneTech</Company>
+    <Version>1.0.1</Version>
   </PropertyGroup>
 
   <ItemGroup>
@@ -26,13 +28,6 @@
     <Folder Include="Diagnostics\" />
     <Folder Include="Licensing\" />
     <Folder Include="Plugins\" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.Hosting" Version="2.2.7" />
-    <PackageReference Include="Microsoft.AspNetCore.Mvc" Version="2.2.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Server.Kestrel" Version="2.2.0" />
-    <PackageReference Include="System.Runtime.Loader" Version="4.3.0" />
   </ItemGroup>
 
 </Project>

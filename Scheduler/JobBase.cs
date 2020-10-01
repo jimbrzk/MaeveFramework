@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using MaeveFramework.Logger;
 using MaeveFramework.Scheduler.Abstractions;
-using Microsoft.Extensions.Logging;
 
 namespace MaeveFramework.Scheduler
 {

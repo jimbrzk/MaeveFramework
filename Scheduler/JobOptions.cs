@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Text;
 using MaeveFramework.Scheduler.Abstractions;
-using Microsoft.Extensions.Options;
 
 namespace MaeveFramework.Scheduler
 {

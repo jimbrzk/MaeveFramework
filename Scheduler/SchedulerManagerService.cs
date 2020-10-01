@@ -7,8 +7,7 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using MaeveFramework.Scheduler.Abstractions;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.DependencyInjection;
+using MaeveFramework.Logger;
 
 namespace MaeveFramework.Scheduler
 {
@@ -21,19 +20,17 @@ namespace MaeveFramework.Scheduler
         private readonly ILogger<SchedulerManagerService> _logger;
         private readonly Dictionary<Guid, DateTime> _jobsToRestart;
         private readonly System.Timers.Timer _jobRestartTimer;
-        private readonly ILoggerFactory _logFactory;
         private readonly IServiceProvider _serviceProvider;
 
         public const int JOBRESTARTAFTERSEC = 10;
         public const int JOBRESTARTNEXTTRYMIN = 5;
 
-        public SchedulerManagerService(ILoggerFactory logFactory, IServiceProvider serviceProvider)
+        public SchedulerManagerService(IServiceProvider serviceProvider)
         {
-            _logFactory = logFactory;
             _serviceProvider = serviceProvider;
 
             if (_logger == null)
-                _logger = _logFactory.CreateLogger<SchedulerManagerService>();
+                _logger = new Logger.ConsoleLogger<SchedulerManagerService>();
 
             if (_jobsList == null)
                 _jobsList = new Dictionary<Guid, JobDetails>();
@@ -73,7 +70,7 @@ namespace MaeveFramework.Scheduler
                         }
                         catch (Exception ex)
                         {
-                            _logger.LogError(ex, $"Exception on crashed {jobObject.Job.Name} job restart - next restart try in {JOBRESTARTNEXTTRYMIN} minutes");
+                            _logger.Error(ex, $"Exception on crashed {jobObject.Job.Name} job restart - next restart try in {JOBRESTARTNEXTTRYMIN} minutes");
 
                             _jobsList[job.Key].Job.State = JobState.Crash;
                             _jobsToRestart[job.Key] = DateTime.Now.AddMinutes(JOBRESTARTNEXTTRYMIN);
@@ -83,7 +80,7 @@ namespace MaeveFramework.Scheduler
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unhandled job restarter exception");
+                _logger.Error(ex, "Unhandled job restarter exception");
             }
         }
 
@@ -96,7 +93,7 @@ namespace MaeveFramework.Scheduler
             if (_jobsList.Values.Any(x => x.Job.Name.Equals(job.Name, StringComparison.InvariantCultureIgnoreCase)))
                 throw new ArgumentException($"Job with name {job.Name} is already exist!");
 
-            job.Logger = _logFactory.CreateLogger(job.Name);
+            job.Logger = new Logger.ConsoleLogger();
             job.ServiceProvider = _serviceProvider;
 
             var jobDetail = new JobDetails(job);
@@ -135,7 +132,7 @@ namespace MaeveFramework.Scheduler
             {
                 if (job.SystemTask.IsCompleted || job.SystemTask.IsFaulted)
                 {
-                    _logger.LogWarning($"Starting again stopped or crashed job, task state: {job.SystemTask.Status.ToString()}, job state: {job.StateName}");
+                    _logger.Warn($"Starting again stopped or crashed job, task state: {job.SystemTask.Status.ToString()}, job state: {job.StateName}");
 
                     job.JobCancelToken = new CancellationTokenSource();
 
@@ -150,7 +147,7 @@ namespace MaeveFramework.Scheduler
             }
             else
             {
-                _logger.LogWarning($"Cannot start job with state: {job.StateName}");
+                _logger.Warn($"Cannot start job with state: {job.StateName}");
             }
         }
 
@@ -174,7 +171,7 @@ namespace MaeveFramework.Scheduler
 
                     _jobsList[job.Guid].NextRun = jobDetail.Job.Schedule.GetNextRun(true);
 
-                    _logger.LogDebug($"Job {jobDetail.Job.Name} started, run scheduled at {_jobsList[job.Guid].NextRun}");
+                    _logger.Debug($"Job {jobDetail.Job.Name} started, run scheduled at {_jobsList[job.Guid].NextRun}");
 
                     while (_jobsList[job.Guid].Job.State != JobState.Stopping || !jobDetail.JobCancelToken.Token.IsCancellationRequested)
                     {
@@ -193,11 +190,11 @@ namespace MaeveFramework.Scheduler
 
                                 _jobsList[job.Guid].Job.State = JobState.Idle;
 
-                                _logger.LogDebug($"Job {jobDetail.Job.Name} is now idle, next run at {_jobsList[job.Guid].NextRun}");
+                                _logger.Debug($"Job {jobDetail.Job.Name} is now idle, next run at {_jobsList[job.Guid].NextRun}");
                             }
                             else
                             {
-                                _logger.LogWarning("can't run job more often then 1 second");
+                                _logger.Warn("can't run job more often then 1 second");
                             }
                         }
 
@@ -209,7 +206,7 @@ namespace MaeveFramework.Scheduler
                 }
                 catch (OperationCanceledException ex)
                 {
-                    _logger.LogError(ex, $"Stopping job {jobDetail.Job.Name}, reason: {ex.Message}");
+                    _logger.Error(ex, $"Stopping job {jobDetail.Job.Name}, reason: {ex.Message}");
 
                     _jobsList[job.Guid].Job.State = JobState.Stopping;
                     job.OnStop();
@@ -221,7 +218,7 @@ namespace MaeveFramework.Scheduler
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Unhandled job exception");
+                    _logger.Error(ex, "Unhandled job exception");
 
                     JobState currentState = _jobsList[job.Guid].Job.State;
                     _jobsList[job.Guid].Job.State = JobState.Crash;
@@ -247,7 +244,7 @@ namespace MaeveFramework.Scheduler
                 }
                 finally
                 {
-                    _logger.LogDebug($"Job {jobDetail.Job.Name} is now {_jobsList[job.Guid].Job.State}");
+                    _logger.Debug($"Job {jobDetail.Job.Name} is now {_jobsList[job.Guid].Job.State}");
 
                     _jobsList[job.Guid].JobCancelToken.CancelAfter(200);
                 }
@@ -261,7 +258,7 @@ namespace MaeveFramework.Scheduler
         /// </summary>
         public void CancelJobs()
         {
-            _logger.LogWarning("Stopping all jobs");
+            _logger.Warn("Stopping all jobs");
 
             foreach (var job in _jobsList.Values)
             {
