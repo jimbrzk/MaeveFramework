@@ -1,17 +1,23 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-using MaeveFramework.Diagnostics;
 using MaeveFramework.Scheduler.Abstractions;
+using Microsoft.Extensions.Logging;
 
 namespace MaeveFramework.Scheduler
 {
     public abstract class JobBase : JobOptions
     {
-        public Logger Logger;
+        public ILogger Logger;
+        public IServiceProvider ServiceProvider;
 
         public string Name => this.GetType().Name;
         public Schedule Schedule => base.Schedule;
+
+        public override int GetHashCode()
+        {
+            return Name.GetHashCode();
+        }
 
         protected JobBase(Schedule schedule, object options = null) : base()
         {
@@ -19,7 +25,6 @@ namespace MaeveFramework.Scheduler
             base.State = JobState.NotStarted;
             base.Options = options;
             base.Schedule = schedule;
-            Logger = new Logger($"MaeveFramework.Scheduler.Jobs.{Name}");
         }
 
         public TTypeOptions GetJobOptions<TTypeOptions>() => (TTypeOptions)base.Options;

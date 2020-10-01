@@ -23,7 +23,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="Diagnostics\" />
     <Folder Include="Licensing\" />
+    <Folder Include="Plugins\" />
   </ItemGroup>
 
   <ItemGroup>
