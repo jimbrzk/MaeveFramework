@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.29609.76
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MaeveFramework", "MaeveFramework\MaeveFramework.csproj", "{06E2E840-A7A4-445F-93F2-5A57B9A8296A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MaeveFramework", "MaeveFramework\MaeveFramework.csproj", "{06E2E840-A7A4-445F-93F2-5A57B9A8296A}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MaeveFrameworkTests.Core", "MaeveFramework.Tests.Core\MaeveFrameworkTests.Core.csproj", "{E7888203-E7BD-42D5-BFF7-BC3B49314BFF}"
 EndProject

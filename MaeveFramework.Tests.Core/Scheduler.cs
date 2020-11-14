@@ -127,8 +127,8 @@ namespace MaeveFramework.Tests.Core
         public void ScheduleCase5()
         {
             Schedule schedule = new Schedule(start: 8.Hours(), end: 10.Hours(), daysOfWeek: new DayOfWeek[] { DayOfWeek.Monday }, daysOfMonth: new int[] { 1, 2, 3, 4, 5, 6, 7 });
-
             DateTime testDate = new DateTime(2020, 1, 6, 9, 0, 0);
+            var next = schedule.GetNextRun(calculateFrom: new DateTime(2020, 1, 5, 3, 0, 0));
 
         }
 
