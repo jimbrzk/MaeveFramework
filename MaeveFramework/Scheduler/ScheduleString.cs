@@ -17,7 +17,7 @@ namespace MaeveFramework.Scheduler
         {
             if (String.IsNullOrWhiteSpace(scheduleString))
                 return new Schedule();
-            else if (scheduleString == "|||||true")
+            else if (scheduleString.ToLower() == "|||||true")
                 return new Schedule(never: true);
 
             string[] scheduleEp = scheduleString.Split('|');
@@ -28,7 +28,7 @@ namespace MaeveFramework.Scheduler
 
             TimeSpan? end = null;
             if (scheduleEp.Length > 1 && !String.IsNullOrWhiteSpace(scheduleEp[1]))
-                start = TimeSpan.Parse(scheduleEp[1]);
+                end = TimeSpan.Parse(scheduleEp[1]);
 
             List<DayOfWeek> dayOfWeeks = new List<DayOfWeek>();
             if (scheduleEp.Length > 2 && !String.IsNullOrWhiteSpace(scheduleEp[2]))
@@ -43,7 +43,7 @@ namespace MaeveFramework.Scheduler
                     daysOfMonth.Add(int.Parse(ws));
             }
 
-            TimeSpan repeat = TimeSpan.Zero;
+            TimeSpan? repeat = null;
             if(scheduleEp.Length > 4 && !String.IsNullOrWhiteSpace(scheduleEp[4]))
                 repeat = TimeSpan.Parse(scheduleEp[4]);
 
@@ -63,7 +63,7 @@ namespace MaeveFramework.Scheduler
         public static string Parse(Schedule schedule)
         {
             if (schedule.Never)
-                return "|||||true";
+                return "|||||True";
             else if (schedule.Always)
                 return string.Empty;
 

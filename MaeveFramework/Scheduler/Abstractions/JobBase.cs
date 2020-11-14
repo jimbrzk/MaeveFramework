@@ -30,10 +30,11 @@ namespace MaeveFramework.Scheduler.Abstractions
         {
             State = JobStateEnum.NotStarted;
             Logger = LoggingManager.GetLogger(FullName);
+            NextRun = Schedule.GetNextRun(!LastRun.HasValue);
         }
 
-        public DateTime NextRun => Schedule.GetNextRun(!LastRun.HasValue);
-        public DateTime? LastRun { get; private set; }
+        public DateTime NextRun { get; internal set; }
+        public DateTime? LastRun { get; internal set; }
         public JobStateEnum State { get; set; }
 
         public virtual void OnStart()
@@ -43,8 +44,7 @@ namespace MaeveFramework.Scheduler.Abstractions
 
         public virtual void Job()
         {
-            State = JobStateEnum.Working;
-            LastRun = DateTime.Now;
+
         }
 
         public virtual void OnStop()

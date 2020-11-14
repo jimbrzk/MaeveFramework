@@ -81,11 +81,10 @@ namespace MaeveFramework.Scheduler.Abstractions
                         {
                             try
                             {
-                                Job.State = JobStateEnum.Working;
                                 // Job
+                                Job.State = JobStateEnum.Working;
+                                job.LastRun = DateTime.Now;
                                 Job.Job();
-
-                                Job.Logger.Debug($"Job {Job.Name} is now idle, next run at {Job.NextRun}");
                             }
                             catch (Exception ex)
                             {
@@ -93,7 +92,9 @@ namespace MaeveFramework.Scheduler.Abstractions
                             }
                             finally
                             {
+                                Job.NextRun = Job.Schedule.GetNextRun();
                                 Job.State = JobStateEnum.Idle;
+                                Job.Logger.Debug($"Job {Job.Name} complete, next run: {Job.NextRun}");
                             }
                         }
 

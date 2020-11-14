@@ -1,4 +1,5 @@
 bin
 obj
-/maevestrongkey.pfx
-/nuget push.bat
+/*.pfx
+/*.bat
+.vs

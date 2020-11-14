@@ -12,11 +12,12 @@
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <Copyright>MIT License © 2020</Copyright>
     <SignAssembly>true</SignAssembly>
-    <AssemblyOriginatorKeyFile>maevestrongkey.pfx</AssemblyOriginatorKeyFile>
+    <AssemblyOriginatorKeyFile>../maevestrongkey.pfx</AssemblyOriginatorKeyFile>
     <Company>Jakub Imbrzykowski TioneTech</Company>
-    <Version>1.0.3</Version>
-    <AssemblyVersion>1.0.3.0</AssemblyVersion>
-    <FileVersion>1.0.3.0</FileVersion>
+    <Version>1.0.4</Version>
+    <AssemblyVersion>1.0.4.0</AssemblyVersion>
+    <FileVersion>1.0.4.0</FileVersion>
+    <DelaySign>false</DelaySign>
   </PropertyGroup>
 
   <ItemGroup>

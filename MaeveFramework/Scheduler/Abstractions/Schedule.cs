@@ -126,7 +126,7 @@ namespace MaeveFramework.Scheduler.Abstractions
                 return false;
             if (DaysOfMonth?.Length > 0 && !(DaysOfMonth?.Contains(dt.Day) ?? false))
                 return false;
-            if ((Start.HasValue && End.HasValue) && (Start.Value < dt.TimeOfDay && End.Value > dt.TimeOfDay))
+            if ((Start.HasValue && End.HasValue) && !(Start.Value < dt.TimeOfDay && End.Value > dt.TimeOfDay))
                 return false;
 
             return true;
