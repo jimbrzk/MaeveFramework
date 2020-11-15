@@ -4,11 +4,11 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <Authors>Jakub Imbrzykowski</Authors>
     <Description />
-    <RepositoryUrl>https://github.com/MaeveFramework/Framework/</RepositoryUrl>
+    <RepositoryUrl>https://github.com/kubala156/MaeveFramework</RepositoryUrl>
     <PackageTags>Helpers, .NET, Plugins, Schduler</PackageTags>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <RepositoryType>GitHub</RepositoryType>
-    <PackageProjectUrl>https://gitlab.com/maeveframework/</PackageProjectUrl>
+    <PackageProjectUrl>https://github.com/kubala156/MaeveFramework</PackageProjectUrl>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <Copyright>MIT License © 2020</Copyright>
     <SignAssembly>true</SignAssembly>
