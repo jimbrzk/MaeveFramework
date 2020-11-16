@@ -69,12 +69,12 @@ namespace MaeveFramework.Scheduler.Abstractions
                         Job.State = JobStateEnum.Started;
                     }
 
-                    if (SchedulerManager.IsDisposed)
-                        Job.Logger.Warn("Unable to start Job, SchedulerManager is disposed!");
+                    if (JobCancelToken.Token.IsCancellationRequested)
+                        Job.Logger.Warn("Unable to start Job, JobCancelToken requested!");
 
-                    while (!SchedulerManager.IsDisposed)
+                    while (!JobCancelToken.Token.IsCancellationRequested)
                     {
-                        if (Job.State == JobStateEnum.Stopping || Job.State == JobStateEnum.Stopped || JobCancelToken.Token.IsCancellationRequested)
+                        if (Job.State == JobStateEnum.Stopping || Job.State == JobStateEnum.Stopped)
                             break;
 
                         if (Job.Schedule.CanRun())

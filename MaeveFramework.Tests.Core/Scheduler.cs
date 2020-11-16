@@ -106,42 +106,47 @@ namespace MaeveFramework.Tests.Core
             Schedule schedule = new Schedule(start: 8.Hours(), end: 10.Hours(), daysOfWeek: new DayOfWeek[] { DayOfWeek.Monday }, daysOfMonth: new int[] { 1, 2, 3, 4, 5, 6, 7 });
             Assert.AreEqual(ScheduleString.Parse("08:00:00|10:00:00|Monday|1,2,3,4,5,6,7||False"), schedule, "SS Parse failed");
             DateTime testDate = new DateTime(2020, 1, 6, 7, 0, 0);
-            Assert.IsFalse(schedule.CanRun(testDate), "Shcedule run at invalid time at {0}", testDate);
+            Assert.IsFalse(schedule.CanRun(testDate), "Shcedule run at invalid time at {0}, case {1}", testDate, 1);
             testDate = new DateTime(2020, 1, 6, 9, 0, 0);
-            Assert.IsTrue(schedule.CanRun(testDate), "Can't run schedule at {0}", testDate);
+            Assert.IsTrue(schedule.CanRun(testDate), "Can't run schedule at {0}, case {1}", testDate, 2);
             testDate = new DateTime(2020, 1, 6, 11, 0, 0);
-            Assert.IsFalse(schedule.CanRun(testDate), "Shcedule run at invalid time at {0}", testDate);
+            Assert.IsFalse(schedule.CanRun(testDate), "Shcedule run at invalid time at {0}, case {1}", testDate, 3);
             testDate = new DateTime(2020, 1, 12, 9, 0, 0);
-            Assert.IsFalse(schedule.CanRun(testDate), "Shcedule run at invalid time at {0}", testDate);
+            Assert.IsFalse(schedule.CanRun(testDate), "Shcedule run at invalid time at {0}, case {1}", testDate, 4);
             testDate = new DateTime(2020, 1, 12, 11, 0, 0);
-            Assert.IsFalse(schedule.CanRun(testDate), "Shcedule run at invalid time at {0}", testDate);
+            Assert.IsFalse(schedule.CanRun(testDate), "Shcedule run at invalid time at {0}, case {1}", testDate, 5);
             testDate = new DateTime(2020, 1, 12, 6, 0, 0);
-            Assert.IsFalse(schedule.CanRun(testDate), "Shcedule run at invalid time at {0}", testDate);
+            Assert.IsFalse(schedule.CanRun(testDate), "Shcedule run at invalid time at {0}, case {1}", testDate, 6);
             testDate = new DateTime(2020, 1, 5, 9, 0, 0);
-            Assert.IsFalse(schedule.CanRun(testDate), "Shcedule run at invalid time at {0}", testDate);
+            Assert.IsFalse(schedule.CanRun(testDate), "Shcedule run at invalid time at {0}, case {1}", testDate, 7);
             testDate = new DateTime(2020, 1, 7, 6, 0, 0);
-            Assert.IsFalse(schedule.CanRun(testDate), "Shcedule run at invalid time at {0}", testDate);
+            Assert.IsFalse(schedule.CanRun(testDate), "Shcedule run at invalid time at {0}, case {1}", testDate, 8);
         }
 
         [TestMethod]
         public void ScheduleCase5()
         {
-            Schedule schedule = new Schedule(start: 8.Hours(), end: 10.Hours(), daysOfWeek: new DayOfWeek[] { DayOfWeek.Monday }, daysOfMonth: new int[] { 1, 2, 3, 4, 5, 6, 7 });
-            DateTime testDate = new DateTime(2020, 1, 6, 9, 0, 0);
-            var next = schedule.GetNextRun(calculateFrom: new DateTime(2020, 1, 5, 3, 0, 0));
+            DateTime testDate = new DateTime(2020, 1, 5, 7, 0, 0);
 
-        }
+            Schedule schedule3 = ScheduleString.Parse("08:00:00|10:00:00|Monday||28.00:00:00|False");
+            Assert.IsFalse(schedule3.CanRun(testDate), "Schedule too soon");
 
-        [TestMethod]
-        public void IsSchedulerCreated()
-        {
-            Assert.IsTrue(SchedulerManager.Current != null, "Failed to create scheduler");
+            var next3 = schedule3.GetNextRun(calculateFrom: testDate);
+            Assert.IsTrue(schedule3.CanRun(next3), "Can't run at {0}", next3);
+
+            Assert.IsFalse(schedule3.CanRun(next3.AddHours(4)), "Schedule too late");
+
+            var next333 = schedule3.GetNextRun(calculateFrom: next3);
+            Assert.IsTrue(schedule3.CanRun(next333), "Can't run at {0}", next333);
+
+            var next33333 = schedule3.GetNextRun(calculateFrom: testDate.AddDays(1).AddSeconds(1));
+            Assert.IsTrue(schedule3.CanRun(next33333), "Can't run at {0}", next33333);
         }
 
         [TestMethod]
         public void JobCase1()
         {
-            Guid jobguid = SchedulerManager.Current.CreateJob(new TestJob(ScheduleString.Parse("00:00:00||||00:00:05|"), "testowa opcja"));
+            Guid jobguid = SchedulerManager.CreateJob(new TestJob(ScheduleString.Parse("||||00:00:05|"), "testowa opcja"));
             Assert.IsTrue(SchedulerManager.Job<TestJob>() != null, "Failed to create job");
 
             SchedulerManager.StartAllJobs();

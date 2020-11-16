@@ -13,9 +13,9 @@
     <Copyright>MIT License © 2020</Copyright>
     <SignAssembly>true</SignAssembly>
     <Company>Jakub Imbrzykowski TioneTech</Company>
-    <Version>1.0.4.1</Version>
-    <AssemblyVersion>1.0.4.1</AssemblyVersion>
-    <FileVersion>1.0.4.1</FileVersion>
+    <Version>1.0.4.2</Version>
+    <AssemblyVersion>1.0.4.2</AssemblyVersion>
+    <FileVersion>1.0.4.2</FileVersion>
     <DelaySign>false</DelaySign>
     <AssemblyOriginatorKeyFile>maevestrongkey.pfx</AssemblyOriginatorKeyFile>
   </PropertyGroup>

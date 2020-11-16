@@ -19,9 +19,16 @@ namespace MaeveFramework.Scheduler
 
         private static ILogger _logger;
 
-        public static SchedulerManager Current { get; private set; }
-
-        public static bool IsDisposed { get; private set; }
+        public static List<JobController> Jobs
+        {
+            get
+            {
+                lock (_jobsLocker)
+                {
+                    return _jobs;
+                }
+            }
+        }
 
         public JobBase this[Type jobType]
         {
@@ -61,34 +68,16 @@ namespace MaeveFramework.Scheduler
             }
         }
 
-        public static JobBase Job<JobType>() where JobType : JobBase => Current[typeof(JobType)] as JobType;
-        public static JobBase Job<JobType>(Guid jobGuid) where JobType : JobBase => Current[jobGuid] as JobType;
+        public static JobBase Job<JobType>() where JobType : JobBase => _jobs.FirstOrDefault(x => x.Job.JobType == typeof(JobType))?.Job as JobType;
+        public static JobBase Job<JobType>(Guid jobGuid) where JobType : JobBase => _jobs.FirstOrDefault(x => x.Job.Guid == jobGuid)?.Job as JobType;
 
         public static JobController JobController(Guid jobGuid) => _jobs.FirstOrDefault(x => x.Job.Guid == jobGuid);
         public static JobController JobController(string jobName) => _jobs.FirstOrDefault(x => x.Job.Name == jobName);
 
-        public SchedulerManager()
+        static SchedulerManager()
         {
-            IsDisposed = false;
-
             if (_logger == null)
                 _logger = LoggingManager.GetLogger(nameof(SchedulerManager));
-
-            if (Current == null)
-                Current = this;
-        }
-
-        public void Dispose()
-        {
-            _logger.Debug("Dispose");
-            IsDisposed = true;
-
-            StopAllJobs(true);
-            lock (_jobsLocker)
-            {
-                _jobs.Clear();
-                Current = null;
-            }
         }
 
         /// <summary>
@@ -96,7 +85,7 @@ namespace MaeveFramework.Scheduler
         /// </summary>
         /// <param name="job"></param>
         /// <exception cref="ArgumentException">If job allready added</exception>
-        public Guid CreateJob(JobBase job)
+        public static Guid CreateJob(JobBase job)
         {
             if (_jobs.Any(x => x.Job.JobType == job.JobType))
                 throw new ArgumentException($"Job with name {job.Name} is already exist!");
