@@ -6,10 +6,17 @@ using System.Threading;
 namespace MaeveFramework.Helpers
 {
     /// <summary>
-    /// Source: https://stackoverflow.com/a/1563234/12482583
+    /// Retry Action and catch exceptions
     /// </summary>
+    // Source: https://stackoverflow.com/a/1563234/12482583
     public static class Retry
     {
+        /// <summary>
+        /// Run Action and catch exceptions
+        /// </summary>
+        /// <param name="action"></param>
+        /// <param name="retryInterval"></param>
+        /// <param name="maxAttemptCount">Throw aggregated exceptions after retries</param>
         public static void Do(
             Action action,
             TimeSpan retryInterval,
@@ -22,6 +29,14 @@ namespace MaeveFramework.Helpers
             }, retryInterval, maxAttemptCount);
         }
 
+        /// <summary>
+        /// Run Action and catch exceptions
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="action"></param>
+        /// <param name="retryInterval"></param>
+        /// <param name="maxAttemptCount">Throw aggregated exceptions after retries</param>
+        /// <returns></returns>
         public static T Do<T>(
             Func<T> action,
             TimeSpan retryInterval,

@@ -36,8 +36,12 @@ namespace MaeveFramework.Scheduler.Abstractions
         /// </summary>
         public bool Always => (!Never && !Repeat.HasValue && DaysOfWeek.Length == 0 && DaysOfMonth.Length == 0);
 
+        private readonly MaeveFramework.Logger.Abstractions.ILogger _logger;
+
         public Schedule(TimeSpan? start = null, TimeSpan? end = null, DayOfWeek[] daysOfWeek = null, int[] daysOfMonth = null, TimeSpan? repeat = null, bool never = false)
         {
+            _logger = Logger.LoggingManager.GetLogger(nameof(Schedule));
+
             Start = start;
             End = end;
             DaysOfWeek = daysOfWeek;
@@ -48,7 +52,7 @@ namespace MaeveFramework.Scheduler.Abstractions
 
         public Schedule()
         {
-
+            _logger = Logger.LoggingManager.GetLogger(nameof(Schedule));
         }
 
         public string GetScheduleDescription()
@@ -87,7 +91,13 @@ namespace MaeveFramework.Scheduler.Abstractions
 
         public DateTime GetNextRun(bool ignoreRepeat = false, DateTime? calculateFrom = null)
         {
-            if (Never) return DateTime.MaxValue;
+            _logger.Trace($"{nameof(GetNextRun)} {nameof(ignoreRepeat)}: {ignoreRepeat} {nameof(calculateFrom)} : {calculateFrom} {nameof(Schedule)}: {this}");
+
+            if (Never)
+            {
+                _logger.Trace($"Result: Never = {DateTime.MaxValue}");
+                return DateTime.MaxValue;
+            }
 
             DateTime dt = (calculateFrom.HasValue)
                 ? calculateFrom.Value
@@ -96,44 +106,81 @@ namespace MaeveFramework.Scheduler.Abstractions
             if (!ignoreRepeat && Repeat.HasValue)
                 dt = dt.Add(Repeat.Value);
 
-            if (CanRun(dt))
-                return dt;
+            if (!CanRun(dt))
+            {
+                if (DaysOfMonth?.Length > 0)
+                {
+                    var oldDt = dt;
+                    dt = GetNextMonthDayDateTimeFromDaysArray(DaysOfMonth, dt);
+                    _logger.Trace($"DaysOfMonth?.Length > 0: Old: {oldDt} New: {dt}");
+                }
 
-            if (DaysOfMonth?.Length > 0)
-                dt = GetNextMonthDayDateTimeFromDaysArray(DaysOfMonth, dt);
+                if (DaysOfWeek?.Length > 0)
+                {
+                    var oldDt = dt;
+                    dt = GetNextWeekDayDateTimeFromWeekArray(DaysOfWeek, dt);
+                    _logger.Trace($"DaysOfWeek?.Length > 0: Old: {oldDt} New: {dt}");
+                }
 
-            if (DaysOfWeek?.Length > 0)
-                dt = GetNextWeekDayDateTimeFromWeekArray(DaysOfWeek, dt);
+                if (Start.HasValue && Repeat.GetValueOrDefault(TimeSpan.Zero) >= TimeSpan.FromDays(1))
+                {
+                    var oldDt = dt;
+                    dt = new DateTime(dt.Year, dt.Month, dt.Day, Start.Value.Hours, Start.Value.Minutes, Start.Value.Seconds, Start.Value.Milliseconds);
+                    _logger.Trace($"Start.HasValue && Repeat.GetValueOrDefault(TimeSpan.Zero) >= TimeSpan.FromDays(1): Old: {oldDt} New: {dt}");
+                }
 
-            if (Start.HasValue && Repeat.GetValueOrDefault(TimeSpan.Zero) >= TimeSpan.FromDays(1))
-                dt = new DateTime(dt.Year, dt.Month, dt.Day, Start.Value.Hours, Start.Value.Minutes, Start.Value.Seconds, Start.Value.Milliseconds);
+                if ((End.HasValue && Start.HasValue) && !IsTimeBetwean(Start.Value, End.Value, dt))
+                {
+                    var oldDt = dt;
+                    dt = GetNextRun(true, new DateTime(dt.Year, dt.Month, dt.Day, Start.Value.Hours, Start.Value.Minutes, Start.Value.Seconds));
+                    _logger.Trace($"(End.HasValue && Start.HasValue) && !IsTimeBetwean(Start.Value, End.Value, dt): Old: {oldDt} New: {dt}");
+                }
+            }
+            else
+            {
+                _logger.Trace($"CanRun = True");
+            }
 
-            if ((End.HasValue && Start.HasValue) && (dt.TimeOfDay < Start.Value && dt.TimeOfDay > End.Value))
-                dt = GetNextRun(true, new DateTime(dt.Year, dt.Month, dt.Day).Add(Start.Value));
-
+            _logger.Trace($"Result: {dt}");
             return dt;
         }
 
         public bool CanRun(DateTime? calculateFrom = null)
         {
+            _logger.Trace($"{nameof(CanRun)} {nameof(calculateFrom)}: {calculateFrom} | {this}");
+
             if (Never)
+            {
+                _logger.Trace($"Result: False, because: {nameof(Never)} = {Never}");
                 return false;
+            }
             else if (Always)
+            {
+                _logger.Trace($"Result: False, because: {nameof(Always)} = {Always}");
                 return true;
+            }
 
             DateTime dt = (calculateFrom.HasValue)
             ? calculateFrom.Value
             : DateTime.Now;
 
             if (DaysOfWeek?.Length > 0 && !(DaysOfWeek?.Contains(dt.DayOfWeek) ?? false))
+            {
+                _logger.Trace($"Result: False, because: {nameof(DaysOfWeek)} dose not contains: {dt.DayOfWeek} ({dt})");
                 return false;
+            }
             if (DaysOfMonth?.Length > 0 && !(DaysOfMonth?.Contains(dt.Day) ?? false))
+            {
+                _logger.Trace($"Result: False, because: {nameof(DaysOfMonth)} dose not contains: {dt.Day} ({dt})");
                 return false;
-            if (Start.HasValue && dt.TimeOfDay < Start.Value)
+            }
+            if ((Start.HasValue && End.HasValue) && !IsTimeBetwean(Start.Value, End.Value, dt))
+            {
+                _logger.Trace($"Result: False, because: {nameof(Start)} and {nameof(End)} not in range of {dt} ({dt})");
                 return false;
-            if (End.HasValue && dt.TimeOfDay > End.Value)
-                return false;
+            }
 
+            _logger.Trace($"Result: True ({dt})");
             return true;
         }
 
@@ -160,6 +207,12 @@ namespace MaeveFramework.Scheduler.Abstractions
             // The (... + 7) % 7 ensures we end up with a value in the range [0, 6]
             int daysToAdd = ((int)day - (int)start.DayOfWeek + 7) % 7;
             return start.AddDays(daysToAdd);
+        }
+
+        public static bool IsTimeBetwean(TimeSpan start, TimeSpan end, DateTime now)
+        {
+            if ((now.TimeOfDay > start) && (now.TimeOfDay < end)) return true;
+            else return false;
         }
 
         /// <summary>

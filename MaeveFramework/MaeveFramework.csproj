@@ -13,15 +13,29 @@
     <Copyright>MIT License © 2020</Copyright>
     <SignAssembly>true</SignAssembly>
     <Company>Jakub Imbrzykowski TioneTech</Company>
-    <Version>1.0.4.2</Version>
-    <AssemblyVersion>1.0.4.2</AssemblyVersion>
-    <FileVersion>1.0.4.2</FileVersion>
+    <Version>1.0.4.3</Version>
+    <AssemblyVersion>1.0.4.3</AssemblyVersion>
+    <FileVersion>1.0.4.3</FileVersion>
     <DelaySign>false</DelaySign>
     <AssemblyOriginatorKeyFile>maevestrongkey.pfx</AssemblyOriginatorKeyFile>
+    <PackageIcon>logo.png</PackageIcon>
+    <RunPostBuildEvent>OnOutputUpdated</RunPostBuildEvent>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DocumentationFile>../docs/MaeveFramework.xml</DocumentationFile>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <DocumentationFile>../docs/MaeveFramework.xml</DocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>
     <None Include="../LICENSE">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
+    <None Include="..\res\logo.png">
       <Pack>True</Pack>
       <PackagePath></PackagePath>
     </None>

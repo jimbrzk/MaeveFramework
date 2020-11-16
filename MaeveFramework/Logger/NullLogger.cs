@@ -5,9 +5,9 @@ using System.Text;
 
 namespace MaeveFramework.Logger
 {
-    public class NullLogger : ILogger
+    public class NullLogger : LogLevel, ILogger
     {
-        public NullLogger(string loggerName = null) { }
+        public NullLogger(string loggerName = null, LoggingLevelEnum? logLevel = null) { }
 
         public void Debug(Exception ex)
         {

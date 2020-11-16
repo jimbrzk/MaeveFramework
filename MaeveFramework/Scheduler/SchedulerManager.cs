@@ -12,6 +12,9 @@ using MaeveFramework.Logger.Abstractions;
 
 namespace MaeveFramework.Scheduler
 {
+    /// <summary>
+    /// Job scheduler class
+    /// </summary>
     public class SchedulerManager
     {
         private static readonly List<JobController> _jobs = new List<JobController>();
@@ -19,6 +22,15 @@ namespace MaeveFramework.Scheduler
 
         private static ILogger _logger;
 
+        static SchedulerManager()
+        {
+            if (_logger == null)
+                _logger = LoggingManager.GetLogger(nameof(SchedulerManager));
+        }
+
+        /// <summary>
+        /// Current Jobs controller list
+        /// </summary>
         public static List<JobController> Jobs
         {
             get
@@ -30,6 +42,11 @@ namespace MaeveFramework.Scheduler
             }
         }
 
+        /// <summary>
+        /// Get Job
+        /// </summary>
+        /// <param name="jobType">Job with JobBase base class</param>
+        /// <returns>Job object</returns>
         public JobBase this[Type jobType]
         {
             get
@@ -49,6 +66,11 @@ namespace MaeveFramework.Scheduler
             }
         }
 
+        /// <summary>
+        /// Get Job
+        /// </summary>
+        /// <param name="jobGuid">Job GUID</param>
+        /// <returns>Job object</returns>
         public JobBase this[Guid jobGuid]
         {
             get
@@ -68,17 +90,32 @@ namespace MaeveFramework.Scheduler
             }
         }
 
+        /// <summary>
+        /// Get job by type
+        /// </summary>
+        /// <typeparam name="JobType">Job with JobBase base class</typeparam>
+        /// <returns>Job object</returns>
         public static JobBase Job<JobType>() where JobType : JobBase => _jobs.FirstOrDefault(x => x.Job.JobType == typeof(JobType))?.Job as JobType;
+        /// <summary>
+        /// Get job by Guid
+        /// </summary>
+        /// <typeparam name="JobType">Job with JobBase base class</typeparam>
+        /// <param name="jobGuid">Job GUID</param>
+        /// <returns>Job object</returns>
         public static JobBase Job<JobType>(Guid jobGuid) where JobType : JobBase => _jobs.FirstOrDefault(x => x.Job.Guid == jobGuid)?.Job as JobType;
 
+        /// <summary>
+        /// Get job controller
+        /// </summary>
+        /// <param name="jobGuid">Job GUID</param>
+        /// <returns>Job controller object with job object</returns>
         public static JobController JobController(Guid jobGuid) => _jobs.FirstOrDefault(x => x.Job.Guid == jobGuid);
+        /// <summary>
+        /// Get job controller
+        /// </summary>
+        /// <param name="jobName">Job Name string</param>
+        /// <returns>Job controller object with job object</returns>
         public static JobController JobController(string jobName) => _jobs.FirstOrDefault(x => x.Job.Name == jobName);
-
-        static SchedulerManager()
-        {
-            if (_logger == null)
-                _logger = LoggingManager.GetLogger(nameof(SchedulerManager));
-        }
 
         /// <summary>
         /// Create new job to run
@@ -178,6 +215,25 @@ namespace MaeveFramework.Scheduler
             lock (_jobsLocker)
             {
                 JobController(jobName).StopJob();
+            }
+        }
+
+        /// <summary>
+        /// Stop and remove job
+        /// </summary>
+        /// <param name="jobGuid"></param>
+        public static void RemoveJob(Guid jobGuid)
+        {
+            lock (_jobsLocker)
+            {
+                if (!_jobs.Any(x => x.Job.Guid == jobGuid)) return;
+            }
+
+            StopJob(jobGuid);
+
+            lock (_jobsLocker)
+            {
+                _jobs.RemoveAll(x => x.Job.Guid == jobGuid);
             }
         }
     }

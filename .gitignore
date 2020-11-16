@@ -4,3 +4,6 @@ obj
 /*.bat
 .vs
 *.pfx
+/TestResults
+/docs/MaeveFramework.xml
+.DS_Store

@@ -21,5 +21,13 @@ namespace MaeveFramework.Logger.Abstractions
         void Info(Exception ex);
         void Info(Exception ex, string message);
         void Info(string message);
+
+        LoggingLevelEnum? SelectedLevel { get; }
+        bool IsDebugEnabled { get; }
+        bool IsErrorEnabled { get; }
+        bool IsFatalEnabled { get; }
+        bool IsInfoEnabled { get; }
+        bool IsTraceEnabled { get; }
+        bool IsWarnEnabled { get; }
     }
 }

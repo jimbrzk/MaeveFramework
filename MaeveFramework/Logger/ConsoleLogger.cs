@@ -5,88 +5,103 @@ using System.Text;
 
 namespace MaeveFramework.Logger
 {
-    public class ConsoleLogger : ILogger
+    public class ConsoleLogger : LogLevel, ILogger
     {
         public readonly string Name;
 
-        public ConsoleLogger(string loggerName)
+        public ConsoleLogger(string loggerName, LoggingLevelEnum? logLevel = null) : base(logLevel)
         {
             Name = loggerName;
         }
 
         public void Debug(Exception ex)
         {
-            Console.WriteLine($"{Name}|Debug| " + ex.ToString());
+            if (!IsDebugEnabled) return;
+            Console.WriteLine($"{DateTime.Now} |{Name}|Debug| " + ex.ToString());
         }
 
         public void Debug(Exception ex, string message)
         {
-            Console.WriteLine($"{Name}|Debug| " + message + Environment.NewLine + ex.ToString());
+            if (!IsDebugEnabled) return;
+            Console.WriteLine($"{DateTime.Now} |{Name}|Debug| " + message + Environment.NewLine + ex.ToString());
         }
 
         public void Debug(string message)
         {
-            Console.WriteLine($"{Name}|Debug| " + message);
+            if (!IsDebugEnabled) return;
+            Console.WriteLine($"{DateTime.Now} |{Name}|Debug| " + message);
         }
 
         public void Error(Exception ex)
         {
-            Console.WriteLine($"{Name}|Error| " + ex.ToString());
+            if (!IsErrorEnabled) return;
+            Console.WriteLine($"{DateTime.Now} |{Name}|Error| " + ex.ToString());
         }
 
         public void Error(Exception ex, string message)
         {
-            Console.WriteLine($"{Name}|Error| " + message + Environment.NewLine + ex.ToString());
+            if (!IsErrorEnabled) return;
+            Console.WriteLine($"{DateTime.Now} |{Name}|Error| " + message + Environment.NewLine + ex.ToString());
         }
 
         public void Error(string message)
         {
-            Console.WriteLine($"{Name}|Error| " + message);
+            if (!IsErrorEnabled) return;
+            Console.WriteLine($"{DateTime.Now} |{Name}|Error| " + message);
         }
 
         public void Info(Exception ex)
         {
-            Console.WriteLine($"{Name}|Info| " + ex.ToString());
+            if (!IsInfoEnabled) return;
+            Console.WriteLine($"{DateTime.Now} |{Name}|Info| " + ex.ToString());
         }
 
         public void Info(Exception ex, string message)
         {
-            Console.WriteLine($"{Name}|Info| " + message + Environment.NewLine + ex.ToString());
+            if (!IsInfoEnabled) return;
+            Console.WriteLine($"{DateTime.Now} |{Name}|Info| " + message + Environment.NewLine + ex.ToString());
         }
 
         public void Info(string message)
         {
-            Console.WriteLine($"{Name}|Info| " + message);
+            if (!IsInfoEnabled) return;
+            Console.WriteLine($"{DateTime.Now} |{Name}|Info| " + message);
         }
 
         public void Trace(Exception ex)
         {
-            Console.WriteLine($"{Name}|Trace| " + ex.ToString());
+            if (!IsTraceEnabled) return;
+            Console.WriteLine($"{DateTime.Now} |{Name}|Trace| " + ex.ToString());
         }
 
         public void Trace(Exception ex, string message)
         {
-            Console.WriteLine($"{Name}|Trace| " + message + Environment.NewLine + ex.ToString());
+            if (!IsTraceEnabled) return;
+            Console.WriteLine($"{DateTime.Now} |{Name}|Trace| " + message + Environment.NewLine + ex.ToString());
         }
 
         public void Trace(string message)
         {
-            Console.WriteLine($"{Name}|Trace| " + message);
+            if (!IsTraceEnabled) return;
+            Console.WriteLine($"{DateTime.Now} |{Name}|Trace| " + message);
         }
 
         public void Warn(Exception ex)
         {
-            Console.WriteLine($"{Name}|Trace| " + ex.ToString());
+            if (!IsWarnEnabled) return;
+            Console.WriteLine($"{DateTime.Now} |{Name}|Trace| " + ex.ToString());
         }
 
         public void Warn(Exception ex, string message)
         {
-            Console.WriteLine($"{Name}|Trace| " + message + Environment.NewLine + ex.ToString());
+            if (!IsWarnEnabled) return;
+            Console.WriteLine($"{DateTime.Now} |{Name}|Trace| " + message + Environment.NewLine + ex.ToString());
         }
 
         public void Warn(string message)
         {
-            Console.WriteLine($"{Name}|Trace| " + message);
+            if (!IsWarnEnabled) return;
+            Console.WriteLine($"{DateTime.Now} |{Name}|Trace| " + message);
         }
     }
 }
