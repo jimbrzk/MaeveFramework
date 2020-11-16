@@ -87,11 +87,14 @@ namespace MaeveFramework.Scheduler.Abstractions
 
         public DateTime GetNextRun(bool ignoreRepeat = false, DateTime? calculateFrom = null)
         {
-            if (Never) return DateTime.MinValue;
+            if (Never) return DateTime.MaxValue;
 
             DateTime dt = (calculateFrom.HasValue)
                 ? calculateFrom.Value
                 : DateTime.Now;
+
+            if (CanRun(dt))
+                return dt;
 
             if (!ignoreRepeat && Repeat.HasValue)
                 dt = dt.Add(Repeat.Value);
@@ -105,7 +108,7 @@ namespace MaeveFramework.Scheduler.Abstractions
             if (Start.HasValue && Repeat.GetValueOrDefault(TimeSpan.Zero) >= TimeSpan.FromDays(1))
                 dt = new DateTime(dt.Year, dt.Month, dt.Day, Start.Value.Hours, Start.Value.Minutes, Start.Value.Seconds, Start.Value.Milliseconds);
 
-            if ((Start.HasValue && End.HasValue) && (Start.Value < dt.TimeOfDay && End.Value > dt.TimeOfDay))
+            if ((End.HasValue && Start.HasValue) && (dt.TimeOfDay < Start.Value && dt.TimeOfDay > End.Value))
                 dt = GetNextRun(ignoreRepeat, new DateTime(dt.Year, dt.Month, dt.Day).Add(Start.Value));
 
             return dt;
@@ -126,7 +129,7 @@ namespace MaeveFramework.Scheduler.Abstractions
                 return false;
             if (DaysOfMonth?.Length > 0 && !(DaysOfMonth?.Contains(dt.Day) ?? false))
                 return false;
-            if ((Start.HasValue && End.HasValue) && !(Start.Value < dt.TimeOfDay && End.Value > dt.TimeOfDay))
+            if ((Start.HasValue && End.HasValue) && (dt.TimeOfDay < Start.Value && dt.TimeOfDay > End.Value))
                 return false;
 
             return true;
