@@ -10,6 +10,46 @@ using MaeveFramework.Scheduler.Abstractions;
 
 namespace MaeveFramework.Tests.Core
 {
+    public class TestExceptionJob : JobBase<string>
+    {
+        public bool FirstRun { get; set; }
+
+        public TestExceptionJob(MaeveFramework.Scheduler.Abstractions.Schedule schedule, string options) : base(schedule, options)
+        {
+            FirstRun = true;
+        }
+
+        public override void Job()
+        {
+            if (Options == "job")
+                throw new Exception("Test exception");
+
+            Logger.Debug("test - job");
+            base.Job();
+        }
+
+        public override void OnStart()
+        {
+            if (Options == "start" && FirstRun)
+            {
+                FirstRun = false;
+                throw new Exception("Test exception");
+            }
+
+            Logger.Debug("test - start");
+            base.OnStart();
+        }
+
+        public override void OnStop()
+        {
+            if (Options == "stop")
+                throw new Exception("Test exception");
+
+            Logger.Debug("test - stop");
+            base.OnStop();
+        }
+    }
+
     public class TestJob : JobBase<string>
     {
         public TestJob(MaeveFramework.Scheduler.Abstractions.Schedule schedule, string options) : base(schedule, options)
@@ -120,6 +160,7 @@ namespace MaeveFramework.Tests.Core
         }
 
         [TestMethod]
+        [Timeout(300000)]
         public void ScheduleCase6()
         {
             DateTime testDate = new DateTime(2020, 1, 6, 8, 0, 0);
@@ -135,23 +176,18 @@ namespace MaeveFramework.Tests.Core
 
                 for (int h = 23; h >= 0; h--)
                 {
-                    for (int m = 59; m >= 0; m--)
-                    {
-                        for (int s = 59; s >= 0; s--)
-                        {
-                            DateTime testDateFor = nextTestDate.AddHours(h).AddMinutes(m).AddSeconds(s);
+                    DateTime testDateFor = nextTestDate.AddHours(h);
 
-                            if ((schedule.Start >= 8.Hours() && schedule.End <= 10.Hours()))
-                                Assert.IsTrue(schedule.CanRun(testDateFor), "Can't run schedule. Tested date: {0} Schedule: {1}", testDateFor, schedule);
-                            else
-                                Assert.IsFalse(schedule.CanRun(testDateFor), "Invalid date for run. Tested date: {0} Schedule: {1}", testDateFor, schedule);
-                        }
-                    }
+                    if (Schedule.IsTimeBetwean(schedule.Start.Value, schedule.End.Value, testDateFor) && testDateFor.DayOfWeek == DayOfWeek.Monday && schedule.DaysOfMonth.Contains(testDateFor.Day))
+                        Assert.IsTrue(schedule.CanRun(testDateFor), "Can't run schedule. Tested date: {0} Schedule: {1}", testDateFor, schedule);
+                    else
+                        Assert.IsFalse(schedule.CanRun(testDateFor), "Invalid date for run. Tested date: {0} Schedule: {1}", testDateFor, schedule);
                 }
             }
         }
 
         [TestMethod]
+        [Timeout(300000)]
         public void ScheduleCase7()
         {
             DateTime testDate = new DateTime(2020, 1, 6, 8, 0, 0);
@@ -167,23 +203,18 @@ namespace MaeveFramework.Tests.Core
 
                 for (int h = 23; h >= 0; h--)
                 {
-                    for (int m = 59; m >= 0; m--)
-                    {
-                        for (int s = 59; s >= 0; s--)
-                        {
-                            DateTime testDateFor = nextTestDate.AddHours(h).AddMinutes(m).AddSeconds(s);
+                    DateTime testDateFor = nextTestDate.AddHours(h);
 
-                            if ((schedule.Start >= 8.Hours() && schedule.End <= 10.Hours()))
-                                Assert.IsTrue(schedule.CanRun(testDateFor), "Can't run schedule. Tested date: {0} Schedule: {1} Start in range: {2} End in range: {3}", testDateFor, schedule, (schedule.Start >= 8.Hours()), (schedule.End <= 10.Hours()));
-                            else
-                                Assert.IsFalse(schedule.CanRun(testDateFor), "Invalid date for run. Tested date: {0} Schedule: {1} Start in range: {2} End in range: {3}", testDateFor, schedule, (schedule.Start >= 8.Hours()), (schedule.End <= 10.Hours()));
-                        }
-                    }
+                    if (Schedule.IsTimeBetwean(schedule.Start.Value, schedule.End.Value, testDateFor) && testDateFor.DayOfWeek == DayOfWeek.Monday)
+                        Assert.IsTrue(schedule.CanRun(testDateFor), "Can't run schedule. Tested date: {0} Schedule: {1} Start in range: {2} End in range: {3}", testDateFor, schedule, (schedule.Start >= 8.Hours()), (schedule.End <= 10.Hours()));
+                    else
+                        Assert.IsFalse(schedule.CanRun(testDateFor), "Invalid date for run. Tested date: {0} Schedule: {1} Start in range: {2} End in range: {3}", testDateFor, schedule, (schedule.Start >= 8.Hours()), (schedule.End <= 10.Hours()));
                 }
             }
         }
 
         [TestMethod]
+        [Timeout(300000)]
         public void ScheduleCase8()
         {
             DateTime testDate = new DateTime(2020, 1, 6, 8, 0, 0);
@@ -199,18 +230,12 @@ namespace MaeveFramework.Tests.Core
 
                 for (int h = 23; h >= 0; h--)
                 {
-                    for (int m = 59; m >= 0; m--)
-                    {
-                        for (int s = 59; s >= 0; s--)
-                        {
-                            DateTime testDateFor = nextTestDate.AddHours(h).AddMinutes(m).AddSeconds(s);
+                    DateTime testDateFor = nextTestDate.AddHours(h);
 
-                            if ((schedule.Start >= 8.Hours() && schedule.End <= 10.Hours()))
-                                Assert.IsTrue(schedule.CanRun(testDateFor), "Can't run schedule. Tested date: {0} Schedule: {1}", testDateFor, schedule);
-                            else
-                                Assert.IsFalse(schedule.CanRun(testDateFor), "Invalid date for run. Tested date: {0} Schedule: {1}", testDateFor, schedule);
-                        }
-                    }
+                    if ((schedule.Start >= 8.Hours() && schedule.End <= 10.Hours()))
+                        Assert.IsTrue(schedule.CanRun(testDateFor), "Can't run schedule. Tested date: {0} Schedule: {1}", testDateFor, schedule);
+                    else
+                        Assert.IsFalse(schedule.CanRun(testDateFor), "Invalid date for run. Tested date: {0} Schedule: {1}", testDateFor, schedule);
                 }
             }
         }
@@ -233,8 +258,10 @@ namespace MaeveFramework.Tests.Core
         }
 
         [TestMethod]
+        [Timeout(6000)]
         public void JobCase1()
         {
+            SchedulerManager.RemoveJob(nameof(TestJob));
             Guid jobguid = SchedulerManager.CreateJob(new TestJob(ScheduleString.Parse("||||00:00:05|"), "testowa opcja"));
             Assert.IsTrue(SchedulerManager.Job<TestJob>() != null, "Failed to create job");
 
@@ -246,8 +273,10 @@ namespace MaeveFramework.Tests.Core
         }
 
         [TestMethod]
+        [Timeout(6000)]
         public void JobCase2()
         {
+            SchedulerManager.RemoveJob(nameof(TestJob));
             Guid jobguid = SchedulerManager.CreateJob(new TestJob(ScheduleString.Parse("||||00:00:05|"), "testowa opcja"));
             Assert.IsTrue(SchedulerManager.Job<TestJob>() != null, "Failed to create job");
 
@@ -256,6 +285,25 @@ namespace MaeveFramework.Tests.Core
             DateTime dt = DateTime.Now;
             Assert.IsTrue((SchedulerManager.Job<TestJob>().State == MaeveFramework.Scheduler.Abstractions.JobStateEnum.Idle), "Job dose not have idle state ({0})", SchedulerManager.Job<TestJob>().State);
             Assert.IsTrue((SchedulerManager.Job<TestJob>().NextRun.Subtract(dt) > 1.Seconds()), "NextRun to soon! {0}", SchedulerManager.Job<TestJob>().NextRun.Subtract(dt));
+        }
+
+        [TestMethod]
+        [Timeout(6000)]
+        public void JobCase3()
+        {
+            SchedulerManager.RemoveJob(nameof(TestExceptionJob));
+            Guid jobguid = SchedulerManager.CreateJob(new TestExceptionJob(ScheduleString.Parse("||||00:00:05|"), "start"));
+            Assert.IsTrue(SchedulerManager.Job<TestExceptionJob>() != null, "Failed to create job");
+
+            SchedulerManager.StartAllJobs();
+            Thread.Sleep(1000);
+
+            Assert.IsTrue(SchedulerManager.Job<TestExceptionJob>().State == JobStateEnum.Crash, "Job is not in crash state. Current state: {0}", SchedulerManager.Job<TestExceptionJob>().State);
+
+            Thread.Sleep(3000);
+
+            var newState = SchedulerManager.Job<TestExceptionJob>().State;
+            Assert.IsTrue((newState == JobStateEnum.Idle || newState == JobStateEnum.Working), "Job is not in valid state. Current state: {0}", newState);
         }
     }
 }
