@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <Authors>Jakub Imbrzykowski</Authors>
-    <Description />
+    <Description>Usefull library with some helpers and simple but powerfull Task Scheduler.</Description>
     <RepositoryUrl>https://github.com/kubala156/MaeveFramework</RepositoryUrl>
     <PackageTags>Helpers, .NET, Plugins, Schduler</PackageTags>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
@@ -13,15 +13,16 @@
     <Copyright>MIT License © 2020</Copyright>
     <SignAssembly>true</SignAssembly>
     <Company>Jakub Imbrzykowski TioneTech</Company>
-    <Version>1.0.4.3</Version>
-    <AssemblyVersion>1.0.4.3</AssemblyVersion>
-    <FileVersion>1.0.4.3</FileVersion>
+    <Version>1.0.4.4</Version>
+    <AssemblyVersion>1.0.4.4</AssemblyVersion>
+    <FileVersion>1.0.4.4</FileVersion>
     <DelaySign>false</DelaySign>
     <AssemblyOriginatorKeyFile>MaeveFramework.snk</AssemblyOriginatorKeyFile>
     <PackageIcon>logo.png</PackageIcon>
     <RunPostBuildEvent>OnOutputUpdated</RunPostBuildEvent>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <NeutralLanguage>en</NeutralLanguage>
+    <PackageReleaseNotes>Fixes for jobs scheduler</PackageReleaseNotes>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
