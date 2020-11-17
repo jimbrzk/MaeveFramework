@@ -211,7 +211,7 @@ namespace MaeveFramework.Scheduler.Abstractions
 
         public static bool IsTimeBetwean(TimeSpan start, TimeSpan end, DateTime now)
         {
-            if ((now.TimeOfDay > start) && (now.TimeOfDay < end)) return true;
+            if ((now.TimeOfDay >= start) && (now.TimeOfDay <= end)) return true;
             else return false;
         }
 

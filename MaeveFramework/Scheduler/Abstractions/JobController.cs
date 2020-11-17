@@ -1,4 +1,5 @@
-﻿using System;
+﻿using MaeveFramework.Helpers;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading;
@@ -54,23 +55,15 @@ namespace MaeveFramework.Scheduler.Abstractions
                     Job.State = JobStateEnum.NotStarted;
 
                     // OnStart
-                    try
-                    {
-                        Job.State = JobStateEnum.Starting;
-                        Job.OnStart();
-                        Job.Logger.Debug($"Job {Job.Name} started, run scheduled at {Job.NextRun}");
-                    }
-                    catch (Exception ex)
-                    {
-                        Job.Logger.Error(ex, "Exception on starting Job");
-                    }
-                    finally
-                    {
-                        Job.State = JobStateEnum.Started;
-                    }
+                    // Restart job if exception will be throwen in OnStart
+                    Job.State = JobStateEnum.Starting;
+                    Job.OnStart();
+                    Job.Logger.Debug($"Job {Job.Name} started, run scheduled at {Job.NextRun}");
 
                     if (JobCancelToken.Token.IsCancellationRequested)
                         Job.Logger.Warn("Unable to start Job, JobCancelToken requested!");
+
+                    Job.State = JobStateEnum.Started;
 
                     while (!JobCancelToken.Token.IsCancellationRequested)
                     {
@@ -121,19 +114,42 @@ namespace MaeveFramework.Scheduler.Abstractions
                 {
                     try
                     {
-                        Job.State = JobStateEnum.Stopping;
                         if (Job.State != JobStateEnum.Crash)
+                        {
+                            Job.State = JobStateEnum.Stopping;
                             Job.OnStop();
+                        }
                     }
                     catch (Exception ex)
                     {
                         Job.Logger.Error(ex, "Exception on stopping job");
                     }
 
-                    StopJob(true);
-
                     Job.Logger.Debug($"Job {Job.Name} is now {Job.State}");
-                    Job.State = JobStateEnum.Stopped;
+                    if (Job.State == JobStateEnum.Crash)
+                    {
+                        JobCancelToken = new CancellationTokenSource();
+
+                        Task.Run(() =>
+                        {
+                            try
+                            {
+                                Job.Logger.Warn("Restarting job after crash in 3 seconds.");
+
+                                JobCancelToken.Token.WaitHandle.WaitOne(3.Seconds());
+                                if (!JobCancelToken.IsCancellationRequested)
+                                    StartJob();
+                            }
+                            catch (Exception ex)
+                            {
+                                Job.Logger.Error(ex, "Failed to restart Job");
+                            }
+                        });
+                    }
+                    else
+                    {
+                        Job.State = JobStateEnum.Stopped;
+                    }
                 }
             });
 

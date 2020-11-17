@@ -218,6 +218,21 @@ namespace MaeveFramework.Scheduler
             }
         }
 
+        public static void RemoveJob(string jobName)
+        {
+            lock (_jobsLocker)
+            {
+                if (!_jobs.Any(x => x.Job.Name == jobName)) return;
+            }
+
+            StopJob(jobName);
+
+            lock (_jobsLocker)
+            {
+                _jobs.RemoveAll(x => x.Job.Name == jobName);
+            }
+        }
+
         /// <summary>
         /// Stop and remove job
         /// </summary>
