@@ -1,6 +1,7 @@
 # MaeveFramework
 ### Just another usefull .NET library... :) <3
 
+![CodeQL](https://github.com/kubala156/MaeveFramework/workflows/CodeQL/badge.svg)
 
 ## + Jobs - Simple task scheduling
 ### Create a Job
@@ -97,3 +98,4 @@ MaeveFramework.Helpers.Retry.Do(() =>
 }, TimeSpan.FromSeconds(10), 2);
 ```
 
+=======

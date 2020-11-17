@@ -11,7 +11,7 @@
     <PackageProjectUrl>https://github.com/kubala156/MaeveFramework</PackageProjectUrl>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <Copyright>MIT License © 2020</Copyright>
-    <SignAssembly>true</SignAssembly>
+    <SignAssembly>false</SignAssembly>
     <Company>Jakub Imbrzykowski TioneTech</Company>
     <Version>1.0.4.4</Version>
     <AssemblyVersion>1.0.4.4</AssemblyVersion>
