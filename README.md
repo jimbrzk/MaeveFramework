@@ -96,3 +96,4 @@ MaeveFramework.Helpers.Retry.Do(() =>
     Console.WriteLine("And if i keep throwing exceptions, it will finaly throw agregated exception.");
 }, TimeSpan.FromSeconds(10), 2);
 ```
+
