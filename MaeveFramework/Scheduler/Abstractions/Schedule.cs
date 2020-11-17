@@ -122,17 +122,10 @@ namespace MaeveFramework.Scheduler.Abstractions
                     _logger.Trace($"DaysOfWeek?.Length > 0: Old: {oldDt} New: {dt}");
                 }
 
-                if (Start.HasValue && Repeat.GetValueOrDefault(TimeSpan.Zero) >= TimeSpan.FromDays(1))
-                {
-                    var oldDt = dt;
-                    dt = new DateTime(dt.Year, dt.Month, dt.Day, Start.Value.Hours, Start.Value.Minutes, Start.Value.Seconds, Start.Value.Milliseconds);
-                    _logger.Trace($"Start.HasValue && Repeat.GetValueOrDefault(TimeSpan.Zero) >= TimeSpan.FromDays(1): Old: {oldDt} New: {dt}");
-                }
-
                 if ((End.HasValue && Start.HasValue) && !IsTimeBetwean(Start.Value, End.Value, dt))
                 {
                     var oldDt = dt;
-                    dt = GetNextRun(true, new DateTime(dt.Year, dt.Month, dt.Day, Start.Value.Hours, Start.Value.Minutes, Start.Value.Seconds));
+                    dt = new DateTime(dt.Year, dt.Month, dt.Day, Start.Value.Hours, Start.Value.Minutes, Start.Value.Minutes);
                     _logger.Trace($"(End.HasValue && Start.HasValue) && !IsTimeBetwean(Start.Value, End.Value, dt): Old: {oldDt} New: {dt}");
                 }
             }
@@ -198,8 +191,8 @@ namespace MaeveFramework.Scheduler.Abstractions
         {
             var dates = days.Select(x => new DateTime(fromDT.Year, fromDT.Month, x)).OrderBy(o => o);
             var ddt = dates.FirstOrDefault(x => x >= fromDT);
-            if (ddt != null) return ddt;
-            else return new DateTime(fromDT.AddMonths(1).Year, fromDT.AddMonths(1).Month, dates.Last().Day);
+            if (ddt != DateTime.MinValue) return ddt;
+            else return new DateTime(fromDT.AddMonths(1).Year, fromDT.AddMonths(1).Month, dates.First().Day);
         }
 
         public static DateTime GetNextWeekday(DateTime start, DayOfWeek day)

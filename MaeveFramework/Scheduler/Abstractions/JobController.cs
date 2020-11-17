@@ -9,6 +9,8 @@ namespace MaeveFramework.Scheduler.Abstractions
 {
     public class JobController
     {
+        private readonly object _jobActionRygiel = new object();
+
         public JobController(JobBase job)
         {
             Job = job;
@@ -25,7 +27,7 @@ namespace MaeveFramework.Scheduler.Abstractions
                 if (JobTask == null || JobTask.IsCompleted || JobTask.IsFaulted)
                 {
                     JobCancelToken = new CancellationTokenSource();
-                    JobTask = new Task(CreateAction(Job), JobCancelToken.Token, TaskCreationOptions.RunContinuationsAsynchronously);
+                    JobTask = new Task(CreateAction(Job), JobCancelToken.Token, TaskCreationOptions.LongRunning);
                 }
 
                 JobTask.Start();
@@ -70,14 +72,17 @@ namespace MaeveFramework.Scheduler.Abstractions
                         if (Job.State == JobStateEnum.Stopping || Job.State == JobStateEnum.Stopped)
                             break;
 
-                        if (Job.Schedule.CanRun())
+                        lock (_jobActionRygiel)
                         {
                             try
                             {
-                                // Job
-                                Job.State = JobStateEnum.Working;
-                                job.LastRun = DateTime.Now;
-                                Job.Job();
+                                if (Job.Schedule.CanRun())
+                                {
+                                    // Job
+                                    Job.State = JobStateEnum.Working;
+                                    job.LastRun = DateTime.Now;
+                                    Job.Job();
+                                }
                             }
                             catch (Exception ex)
                             {
@@ -89,13 +94,21 @@ namespace MaeveFramework.Scheduler.Abstractions
                                 Job.State = JobStateEnum.Idle;
                                 Job.Logger.Debug($"Job {Job.Name} complete, next run: {Job.NextRun}");
                             }
+
+                            if (Job.State == JobStateEnum.Stopping || Job.State == JobStateEnum.Stopped || JobCancelToken.Token.IsCancellationRequested)
+                                break;
+
+                            try
+                            {
+                                JobCancelToken.Token.WaitHandle.WaitOne(Job.NextRun.Subtract(DateTime.Now));
+                                JobCancelToken.Token.WaitHandle.WaitOne(200);
+                            }
+                            catch (Exception ex)
+                            {
+                                Job.Logger.Error(ex, "Exception on waiting handle, waiting 3 seconds.");
+                                JobCancelToken.Token.WaitHandle.WaitOne(3.Seconds());
+                            }
                         }
-
-                        if (Job.State == JobStateEnum.Stopping || Job.State == JobStateEnum.Stopped || JobCancelToken.Token.IsCancellationRequested)
-                            break;
-
-                        JobCancelToken.Token.WaitHandle.WaitOne(Job.NextRun.Subtract(DateTime.Now));
-                        JobCancelToken.Token.WaitHandle.WaitOne(10);
                     }
 
                     // OnStop
