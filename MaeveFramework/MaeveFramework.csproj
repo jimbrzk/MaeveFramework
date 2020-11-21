@@ -13,9 +13,9 @@
     <Copyright>MIT License © 2020</Copyright>
     <SignAssembly>false</SignAssembly>
     <Company>Jakub Imbrzykowski TioneTech</Company>
-    <Version>1.0.4.4</Version>
-    <AssemblyVersion>1.0.4.4</AssemblyVersion>
-    <FileVersion>1.0.4.4</FileVersion>
+    <Version>1.0.4.5</Version>
+    <AssemblyVersion>1.0.4.5</AssemblyVersion>
+    <FileVersion>1.0.4.5</FileVersion>
     <DelaySign>false</DelaySign>
     <AssemblyOriginatorKeyFile>MaeveFramework.snk</AssemblyOriginatorKeyFile>
     <PackageIcon>logo.png</PackageIcon>
