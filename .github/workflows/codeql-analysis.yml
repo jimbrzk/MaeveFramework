@@ -13,8 +13,6 @@
 name: "CodeQL"
 
 on:
-  push:
-    branches: [ master ]
   pull_request:
     # The branches below must be a subset of the branches above
     branches: [ master ]
@@ -66,3 +64,12 @@ jobs:
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v1
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v2.2.0
+      with:
+        # Artifact name
+        name: Report
+        # A file, directory or wildcard pattern that describes what to upload
+        path: /home/runner/work/MaeveFramework/results/csharp-builtin.sarif
+      
