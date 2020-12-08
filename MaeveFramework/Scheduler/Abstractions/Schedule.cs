@@ -140,16 +140,12 @@ namespace MaeveFramework.Scheduler.Abstractions
 
         public bool CanRun(DateTime? calculateFrom = null)
         {
-            _logger.Trace($"{nameof(CanRun)} {nameof(calculateFrom)}: {calculateFrom} | {this}");
-
             if (Never)
             {
-                _logger.Trace($"Result: False, because: {nameof(Never)} = {Never}");
                 return false;
             }
             else if (Always)
             {
-                _logger.Trace($"Result: False, because: {nameof(Always)} = {Always}");
                 return true;
             }
 
@@ -159,21 +155,17 @@ namespace MaeveFramework.Scheduler.Abstractions
 
             if (DaysOfWeek?.Length > 0 && !(DaysOfWeek?.Contains(dt.DayOfWeek) ?? false))
             {
-                _logger.Trace($"Result: False, because: {nameof(DaysOfWeek)} dose not contains: {dt.DayOfWeek} ({dt})");
                 return false;
             }
             if (DaysOfMonth?.Length > 0 && !(DaysOfMonth?.Contains(dt.Day) ?? false))
             {
-                _logger.Trace($"Result: False, because: {nameof(DaysOfMonth)} dose not contains: {dt.Day} ({dt})");
                 return false;
             }
             if ((Start.HasValue && End.HasValue) && !IsTimeBetwean(Start.Value, End.Value, dt))
             {
-                _logger.Trace($"Result: False, because: {nameof(Start)} and {nameof(End)} not in range of {dt} ({dt})");
                 return false;
             }
 
-            _logger.Trace($"Result: True ({dt})");
             return true;
         }
 

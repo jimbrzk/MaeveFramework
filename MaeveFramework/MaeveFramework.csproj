@@ -13,16 +13,16 @@
     <Copyright>MIT License © 2020</Copyright>
     <SignAssembly>false</SignAssembly>
     <Company>Jakub Imbrzykowski TioneTech</Company>
-    <Version>1.0.4.5</Version>
-    <AssemblyVersion>1.0.4.5</AssemblyVersion>
-    <FileVersion>1.0.4.5</FileVersion>
+    <Version>1.0.4.6</Version>
+    <AssemblyVersion>1.0.4.6</AssemblyVersion>
+    <FileVersion>1.0.4.6</FileVersion>
     <DelaySign>false</DelaySign>
     <AssemblyOriginatorKeyFile>MaeveFramework.snk</AssemblyOriginatorKeyFile>
     <PackageIcon>logo.png</PackageIcon>
     <RunPostBuildEvent>OnOutputUpdated</RunPostBuildEvent>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <NeutralLanguage>en</NeutralLanguage>
-    <PackageReleaseNotes>Fixes for jobs scheduler</PackageReleaseNotes>
+    <PackageReleaseNotes>Fix for job wait longer theant Int32.MaxValue representation for miliseconds</PackageReleaseNotes>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">

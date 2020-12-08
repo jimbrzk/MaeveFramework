@@ -74,25 +74,24 @@ namespace MaeveFramework.Scheduler.Abstractions
 
                         lock (_jobActionRygiel)
                         {
-                            try
+                            if (Job.Schedule.CanRun())
                             {
-                                if (Job.Schedule.CanRun())
+                                try
                                 {
                                     // Job
                                     Job.State = JobStateEnum.Working;
                                     job.LastRun = DateTime.Now;
                                     Job.Job();
                                 }
-                            }
-                            catch (Exception ex)
-                            {
-                                Job.Logger.Error(ex, $"Exception on execution of job: {Job.Name}");
-                            }
-                            finally
-                            {
-                                Job.NextRun = Job.Schedule.GetNextRun();
-                                Job.State = JobStateEnum.Idle;
-                                Job.Logger.Debug($"Job {Job.Name} complete, next run: {Job.NextRun}");
+                                catch (Exception ex)
+                                {
+                                    Job.Logger.Error(ex, $"Exception on execution of job: {Job.Name}");
+                                }
+                                finally
+                                {
+                                    Job.NextRun = Job.Schedule.GetNextRun();
+                                    Job.Logger.Debug($"Job {Job.Name} complete, next run: {Job.NextRun}");
+                                }
                             }
 
                             if (Job.State == JobStateEnum.Stopping || Job.State == JobStateEnum.Stopped || JobCancelToken.Token.IsCancellationRequested)
@@ -100,7 +99,14 @@ namespace MaeveFramework.Scheduler.Abstractions
 
                             try
                             {
-                                JobCancelToken.Token.WaitHandle.WaitOne(Job.NextRun.Subtract(DateTime.Now));
+                                Job.State = JobStateEnum.Idle;
+
+                                double waitMs = Job.NextRun.Subtract(DateTime.Now).TotalMilliseconds;
+                                Int32 waitMsInt32 = (waitMs > Int32.MaxValue)
+                                ? Int32.MaxValue
+                                : Convert.ToInt32(waitMs);
+
+                                JobCancelToken.Token.WaitHandle.WaitOne(waitMsInt32);
                                 JobCancelToken.Token.WaitHandle.WaitOne(200);
                             }
                             catch (Exception ex)
