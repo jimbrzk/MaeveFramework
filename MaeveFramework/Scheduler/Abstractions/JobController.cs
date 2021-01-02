@@ -17,13 +17,16 @@ namespace MaeveFramework.Scheduler.Abstractions
         }
 
         public readonly JobBase Job;
-        public Task JobTask { get; private set; }
-        public CancellationTokenSource JobCancelToken { get; private set; }
+        private Task JobTask { get; set; }
+        private CancellationTokenSource JobCancelToken { get; set; }
+        private CancellationTokenSource WaitCancelToken { get; set; }
 
         public void StartJob()
         {
             if ((Job.State == JobStateEnum.NotStarted || Job.State == JobStateEnum.Stopped || Job.State == JobStateEnum.Crash) && (JobTask?.Status ?? TaskStatus.WaitingToRun) != TaskStatus.Running)
             {
+                WaitCancelToken = new CancellationTokenSource();
+
                 if (JobTask == null || JobTask.IsCompleted || JobTask.IsFaulted)
                 {
                     JobCancelToken = new CancellationTokenSource();
@@ -40,10 +43,30 @@ namespace MaeveFramework.Scheduler.Abstractions
 
         public void StopJob(bool force = false)
         {
-            if (JobCancelToken.Token.CanBeCanceled)
+            Job.State = JobStateEnum.Stopping;
+
+            if (WaitCancelToken?.Token.CanBeCanceled ?? false)
+                WaitCancelToken.Cancel(false);
+            if (JobCancelToken?.Token.CanBeCanceled ?? false)
                 JobCancelToken.Cancel(false);
 
             Job.State = JobStateEnum.Stopped;
+        }
+
+        /// <summary>
+        /// Wake job and ignore schedule
+        /// </summary>
+        public void Wake()
+        {
+            if (Job.State == JobStateEnum.Stopping || Job.State == JobStateEnum.Stopped)
+                throw new Exception("Cannot wake stopped job!");
+            else if (Job.State == JobStateEnum.Starting || Job.State == JobStateEnum.NotStarted || Job.State == JobStateEnum.NotSet)
+                throw new Exception("Cannot wake not started job!");
+            else
+            {
+                Job.State = JobStateEnum.Wake;
+                WaitCancelToken?.Cancel(false);
+            }
         }
 
         private Action CreateAction(JobBase job)
@@ -63,21 +86,29 @@ namespace MaeveFramework.Scheduler.Abstractions
                     Job.Logger.Debug($"Job {Job.Name} started, run scheduled at {Job.NextRun}");
 
                     if (JobCancelToken.Token.IsCancellationRequested)
-                        Job.Logger.Warn("Unable to start Job, JobCancelToken requested!");
+                        Job.Logger.Debug("Unable to start Job, JobCancelToken requested!");
 
                     Job.State = JobStateEnum.Started;
 
-                    while (!JobCancelToken.Token.IsCancellationRequested)
+                    if (JobTask.IsCompleted)
+                        Job.Logger.Debug("Job task is completed");
+
+                    while (!JobCancelToken.IsCancellationRequested)
                     {
                         if (Job.State == JobStateEnum.Stopping || Job.State == JobStateEnum.Stopped)
+                        {
                             break;
+                        }
 
                         lock (_jobActionRygiel)
                         {
-                            if (Job.Schedule.CanRun())
+                            if (Job.Schedule.CanRun() || Job.State == JobStateEnum.Wake)
                             {
                                 try
                                 {
+                                    if (Job.State == JobStateEnum.Wake)
+                                        Job.Logger.Debug("Job is waking up");
+
                                     // Job
                                     Job.State = JobStateEnum.Working;
                                     job.LastRun = DateTime.Now;
@@ -101,18 +132,26 @@ namespace MaeveFramework.Scheduler.Abstractions
                             {
                                 Job.State = JobStateEnum.Idle;
 
-                                double waitMs = Job.NextRun.Subtract(DateTime.Now).TotalMilliseconds;
-                                Int32 waitMsInt32 = (waitMs > Int32.MaxValue)
-                                ? Int32.MaxValue
-                                : Convert.ToInt32(waitMs);
+                                if (!JobCancelToken.IsCancellationRequested)
+                                {
+                                    if (WaitCancelToken?.IsCancellationRequested ?? true)
+                                        WaitCancelToken = new CancellationTokenSource();
 
-                                JobCancelToken.Token.WaitHandle.WaitOne(waitMsInt32);
-                                JobCancelToken.Token.WaitHandle.WaitOne(200);
+                                    double waitMs = Job.NextRun.Subtract(DateTime.Now).TotalMilliseconds;
+                                    Int32 waitMsInt32 = (waitMs > Int32.MaxValue)
+                                    ? Int32.MaxValue
+                                    : Convert.ToInt32(waitMs);
+
+                                    JobTask.Wait(waitMsInt32, WaitCancelToken.Token);
+                                }
                             }
                             catch (Exception ex)
                             {
-                                Job.Logger.Error(ex, "Exception on waiting handle, waiting 3 seconds.");
-                                JobCancelToken.Token.WaitHandle.WaitOne(3.Seconds());
+                                if (!JobCancelToken.IsCancellationRequested && !WaitCancelToken.IsCancellationRequested)
+                                {
+                                    Job.Logger.Error(ex, "Exception on waiting handle, waiting 3 seconds.");
+                                    JobCancelToken.Token.WaitHandle.WaitOne(3.Seconds());
+                                }
                             }
                         }
                     }
@@ -122,7 +161,7 @@ namespace MaeveFramework.Scheduler.Abstractions
                 }
                 catch (OperationCanceledException ex)
                 {
-                    Job.Logger.Warn(ex, $"Stopping job {Job.Name}, reason: {ex.Message}");
+                    Job.Logger.Debug(ex, $"Stopping job {Job.Name}, reason: {ex.Message}");
                 }
                 catch (Exception ex)
                 {

@@ -105,6 +105,12 @@ namespace MaeveFramework.Scheduler
         public static JobBase Job<JobType>(Guid jobGuid) where JobType : JobBase => _jobs.FirstOrDefault(x => x.Job.Guid == jobGuid)?.Job as JobType;
 
         /// <summary>
+        /// Get job controller by job type
+        /// </summary>
+        /// <typeparam name="JobType"></typeparam>
+        /// <returns>Job controller</returns>
+        public static JobController JobController<JobType>() where JobType : JobBase => _jobs.FirstOrDefault(x => x.Job.JobType == typeof(JobType));
+        /// <summary>
         /// Get job controller
         /// </summary>
         /// <param name="jobGuid">Job GUID</param>

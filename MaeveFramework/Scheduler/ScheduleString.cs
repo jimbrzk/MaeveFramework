@@ -6,6 +6,9 @@ using MaeveFramework.Scheduler.Abstractions;
 
 namespace MaeveFramework.Scheduler
 {
+    /// <summary>
+    /// Schedule parser
+    /// </summary>
     public class ScheduleString
     {
         /// <summary>
@@ -56,9 +59,9 @@ namespace MaeveFramework.Scheduler
         }
 
         /// <summary>
-        /// 
+        /// Create schedule string representation
         /// </summary>
-        /// <param name="scheduleString">START_DT|END_DT|DayOfWeek(1,7)|DaysOfMonths(1,31)|Repeat(TS)|Never</param>
+        /// <param name="schedule"></param>
         /// <returns></returns>
         public static string Parse(Schedule schedule)
         {

@@ -56,6 +56,14 @@ var status = job.Status;
 DateTime? lastRun = job.LastRun;
 ```
 
+### Can't wait for next job run from schedule? Force it!
+
+```
+SchedulerManager.JobController<TestJob>().Wake();
+```
+
+This wake up call will execute the job ignoring the schedule. Be aware that new NextRun time will be calculated after that.
+
 ## + Helpers
 
 ### - DynamicLinq
