@@ -1,7 +1,6 @@
 # MaeveFramework
 ### Just another usefull .NET library... :) <3
 
-![CodeQL](https://github.com/kubala156/MaeveFramework/workflows/CodeQL/badge.svg)
 ![Nuget](https://img.shields.io/nuget/v/MaeveFramework)
 
 ## + Jobs - Simple task scheduling
@@ -62,13 +61,13 @@ DateTime? lastRun = job.LastRun;
 SchedulerManager.JobController<TestJob>().Wake();
 ```
 
+This wake up call will execute the job ignoring the schedule. Be aware that new NextRun time will be calculated after that.
+
 ### Want to call Job method in another namespace? Sure!
 
 ```
 SchedulerManager.Job<TestJob>().SendData();
 ```
-
-This wake up call will execute the job ignoring the schedule. Be aware that new NextRun time will be calculated after that.
 
 ## + Helpers
 
