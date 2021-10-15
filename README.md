@@ -53,6 +53,8 @@ TestJob job = MaeveFramework.Scheduler.SchedulerManager.Job<TestJob>();
 job = TestJob job = MaeveFramework.Scheduler.SchedulerManager.Job<TestJob>(job.Guid);
 var status = job.Status;
 DateTime? lastRun = job.LastRun;
+// Or use methods defined in job
+job.SendData();
 ```
 
 ### Can't wait for next job run from schedule? Force it!
@@ -62,12 +64,6 @@ SchedulerManager.JobController<TestJob>().Wake();
 ```
 
 This wake up call will execute the job ignoring the schedule. Be aware that new NextRun time will be calculated after that.
-
-### Want to call Job method in another namespace? Sure!
-
-```
-SchedulerManager.Job<TestJob>().SendData();
-```
 
 ## + Helpers
 
