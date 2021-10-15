@@ -62,6 +62,12 @@ DateTime? lastRun = job.LastRun;
 SchedulerManager.JobController<TestJob>().Wake();
 ```
 
+### Want to call Job method in another namespace? Sure!
+
+```
+SchedulerManager.Job<TestJob>().SendData();
+```
+
 This wake up call will execute the job ignoring the schedule. Be aware that new NextRun time will be calculated after that.
 
 ## + Helpers
