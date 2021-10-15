@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <Authors>Jakub Imbrzykowski</Authors>
-    <Description>Usefull library with some helpers and simple but powerfull Task Scheduler.</Description>
+    <Description>Useful library with some helpers and simple but powerful Task Scheduler.</Description>
     <RepositoryUrl>https://github.com/kubala156/MaeveFramework</RepositoryUrl>
     <PackageTags>Helpers, .NET, Plugins, Schduler</PackageTags>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
