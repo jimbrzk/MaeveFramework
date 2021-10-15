@@ -94,15 +94,27 @@ namespace MaeveFramework.Scheduler
         /// Get job by type
         /// </summary>
         /// <typeparam name="JobType">Job with JobBase base class</typeparam>
-        /// <returns>Job object</returns>
-        public static JobBase Job<JobType>() where JobType : JobBase => _jobs.FirstOrDefault(x => x.Job.JobType == typeof(JobType))?.Job as JobType;
+        /// <returns>Job</returns>
+        public static JobType Job<JobType>() where JobType : JobBase => _jobs.FirstOrDefault(x => x.Job.JobType == typeof(JobType))?.Job as JobType;
+        /// <summary>
+        /// Get Job base
+        /// </summary>
+        /// <typeparam name="JobType"></typeparam>
+        /// <returns></returns>
+        public static JobBase JobBase<JobType>() where JobType : JobBase => _jobs.FirstOrDefault(x => x.Job.JobType == typeof(JobType))?.Job as JobType;
         /// <summary>
         /// Get job by Guid
         /// </summary>
         /// <typeparam name="JobType">Job with JobBase base class</typeparam>
         /// <param name="jobGuid">Job GUID</param>
         /// <returns>Job object</returns>
-        public static JobBase Job<JobType>(Guid jobGuid) where JobType : JobBase => _jobs.FirstOrDefault(x => x.Job.Guid == jobGuid)?.Job as JobType;
+        public static JobType Job<JobType>(Guid jobGuid) where JobType : JobBase => _jobs.FirstOrDefault(x => x.Job.Guid == jobGuid)?.Job as JobType;
+        /// <summary>
+        /// Get Job base
+        /// </summary>
+        /// <param name="jobGuid"></param>
+        /// <returns></returns>
+        public static JobBase JobBase(Guid jobGuid) => _jobs.FirstOrDefault(x => x.Job.Guid == jobGuid)?.Job;
 
         /// <summary>
         /// Get job controller by job type
