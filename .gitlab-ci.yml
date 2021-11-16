@@ -111,3 +111,9 @@ tests:
   # (e.g. integration tests, unit tests etc).
   script:
     - 'dotnet test --no-restore'
+
+  rules:
+  - if: "$CI_COMMIT_BRANCH"
+    
+include:
+- template: Security/Secret-Detection.gitlab-ci.yml
