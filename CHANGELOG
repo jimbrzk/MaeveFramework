@@ -1,2 +1,4 @@
 1.0.4 
 - Scheduler rework
+1.1.0
+- Remove unused classes: DynamicLinq, CLI

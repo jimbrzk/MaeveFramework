@@ -265,10 +265,11 @@ namespace MaeveFramework.Tests.Core
             Guid jobguid = SchedulerManager.CreateJob(new TestJob(ScheduleString.Parse("||||00:00:05|"), "testowa opcja"));
             Assert.IsTrue(SchedulerManager.Job<TestJob>() != null, "Failed to create job");
 
+            
             SchedulerManager.StartAllJobs();
             Thread.Sleep(2000);
             DateTime dt = DateTime.Now;
-            Assert.IsTrue((SchedulerManager.Job<TestJob>().State == MaeveFramework.Scheduler.Abstractions.JobStateEnum.Idle), "Job dose not have idle state ({0})", SchedulerManager.Job<TestJob>().State);
+            Assert.IsTrue((SchedulerManager.Job<TestJob>().State == JobStateEnum.Idle), "Job dose not have idle state ({0})", SchedulerManager.Job<TestJob>().State);
             Assert.IsTrue((SchedulerManager.Job<TestJob>().NextRun.Subtract(dt) > 1.Seconds()), "NextRun to soon! {0}", SchedulerManager.Job<TestJob>().NextRun.Subtract(dt));
         }
 
@@ -288,7 +289,7 @@ namespace MaeveFramework.Tests.Core
         }
 
         [TestMethod]
-        [Timeout(6000)]
+        [Timeout(10000)]
         public void JobCase3()
         {
             SchedulerManager.RemoveJob(nameof(TestExceptionJob));
@@ -296,17 +297,14 @@ namespace MaeveFramework.Tests.Core
             Assert.IsTrue(SchedulerManager.Job<TestExceptionJob>() != null, "Failed to create job");
 
             SchedulerManager.StartAllJobs();
-            Thread.Sleep(1000);
 
-            Assert.IsTrue(SchedulerManager.Job<TestExceptionJob>().State == JobStateEnum.Crash, "Job is not in crash state. Current state: {0}", SchedulerManager.Job<TestExceptionJob>().State);
+            Assert.IsTrue(SchedulerManager.JobController<TestExceptionJob>().WaitForState(JobStateEnum.Crash, 2.Seconds()), "Job is not in crash state. Current state: {0}", SchedulerManager.Job<TestExceptionJob>().State);
 
-            Thread.Sleep(3000);
-
-            var newState = SchedulerManager.Job<TestExceptionJob>().State;
-            Assert.IsTrue((newState == JobStateEnum.Idle || newState == JobStateEnum.Working), "Job is not in valid state. Current state: {0}", newState);
+            Assert.IsTrue(SchedulerManager.JobController<TestExceptionJob>().WaitForState(new [] { JobStateEnum.Working, JobStateEnum.Idle }, 2.Seconds()), "Job is not in valid state. Current state: {0}", SchedulerManager.Job<TestExceptionJob>().State);
         }
 
         [TestMethod]
+        [Timeout(12000)]
         public void WakeJob()
         {
             SchedulerManager.RemoveJob(nameof(TestExceptionJob));
@@ -315,13 +313,10 @@ namespace MaeveFramework.Tests.Core
             Assert.IsTrue(SchedulerManager.Job<TestExceptionJob>() != null, "Failed to create job");
 
             SchedulerManager.StartAllJobs();
-            Thread.Sleep(30);
-
-            Assert.IsFalse(SchedulerManager.Job<TestExceptionJob>().LastRun.HasValue, "Job executed too soon", SchedulerManager.Job<TestExceptionJob>().LastRun?.ToString());
+            Assert.IsTrue(SchedulerManager.JobController<TestExceptionJob>().WaitForState(JobStateEnum.Idle, 5.Seconds()), "Job failed to get into Idle state in 5 seconds");
 
             SchedulerManager.JobController<TestExceptionJob>().Wake();
-            Assert.IsTrue(SchedulerManager.Job<TestExceptionJob>().State == JobStateEnum.Wake, "Job is not waking up");
-            Thread.Sleep(2000);
+            Assert.IsTrue(SchedulerManager.JobController<TestExceptionJob>().WaitForState(new [] { JobStateEnum.Wake, JobStateEnum.Working }, 3.Seconds()), "Job is not waking up in 3 seconds");
 
             Assert.IsTrue(SchedulerManager.Job<TestExceptionJob>().LastRun.HasValue, "Job not executed after wakeup call", SchedulerManager.Job<TestExceptionJob>().LastRun?.ToString());
         }

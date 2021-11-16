@@ -6,6 +6,9 @@ using System.Text;
 
 namespace MaeveFramework.Helpers
 {
+    /// <summary>
+    /// Helping class for preoperties resolving. For example, you can use it for email templating
+    /// </summary>
     public static class PropertiesResolver
     {
         /// <summary>

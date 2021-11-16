@@ -5,6 +5,9 @@ using System.Text;
 
 namespace MaeveFramework.Helpers
 {
+    /// <summary>
+    /// Convert arguments in array to dictionary
+    /// </summary>
     public static class ArgsArrayConverter
     {
         public static Dictionary<string, string> ArgsToDictionary(this string[] args, string prefix = "-")

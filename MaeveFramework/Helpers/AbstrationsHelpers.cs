@@ -6,8 +6,15 @@ using System.Text;
 
 namespace MaeveFramework.Helpers
 {
+    /// <summary>
+    /// Abstractions helpers class
+    /// </summary>
     public class AbstrationsHelpers
     {
+        /// <summary>
+        /// Get name of class that call this method
+        /// </summary>
+        /// <returns></returns>
         public static string NameOfCallingClass()
         {
             string fullName;

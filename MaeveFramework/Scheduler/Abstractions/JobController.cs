@@ -1,56 +1,122 @@
 ﻿using MaeveFramework.Helpers;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace MaeveFramework.Scheduler.Abstractions
 {
+    /// <summary>
+    /// Job controller for job
+    /// </summary>
     public class JobController
     {
         private readonly object _jobActionRygiel = new object();
 
+        /// <inheritdoc cref="JobController" />
         public JobController(JobBase job)
         {
             Job = job;
         }
 
+        /// <summary>
+        /// Controled job
+        /// </summary>
         public readonly JobBase Job;
         private Task JobTask { get; set; }
         private CancellationTokenSource JobCancelToken { get; set; }
         private CancellationTokenSource WaitCancelToken { get; set; }
 
+        /// <summary>
+        /// Wait for Job State
+        /// </summary>
+        /// <param name="acceptedStates">Required state</param>
+        /// <param name="timeout">(Optional) timeout of waiting for state</param>
+        /// <returns></returns>
+        public bool WaitForState(JobStateEnum[] acceptedStates, TimeSpan? timeout = null)
+        {
+            if (acceptedStates.Contains(Job.State)) return true;
+            DateTime end = DateTime.Now.Add(timeout.GetValueOrDefault(TimeSpan.MaxValue));
+            bool wait = true;
+            EventHandler<JobStateEnum> stateEventHandlerAction = (caller, state) =>
+            {
+                if (acceptedStates.Contains(state))
+                    wait = false;
+            };
+            Job.StateChange += stateEventHandlerAction;
+
+            while (wait)
+            {
+                if (acceptedStates.Contains(Job.State)) return true;
+                if (end <= DateTime.Now) break;
+                Thread.Sleep(10.Miliseconds());
+            }
+            Job.StateChange -= stateEventHandlerAction;
+            return acceptedStates.Contains(Job.State);
+        }
+
+        /// <inheritdoc cref="WaitForState(JobStateEnum[], TimeSpan?)" />
+        public bool WaitForState(JobStateEnum state, TimeSpan? timeout = null) => WaitForState(new[] { state }, timeout);
+
+        /// <summary>
+        /// Start job task with configured schedule
+        /// </summary>
         public void StartJob()
         {
-            if ((Job.State == JobStateEnum.NotStarted || Job.State == JobStateEnum.Stopped || Job.State == JobStateEnum.Crash) && (JobTask?.Status ?? TaskStatus.WaitingToRun) != TaskStatus.Running)
+            lock (_jobActionRygiel)
             {
-                WaitCancelToken = new CancellationTokenSource();
-
-                if (JobTask == null || JobTask.IsCompleted || JobTask.IsFaulted)
+                if ((Job.State == JobStateEnum.NotStarted || Job.State == JobStateEnum.Stopped || Job.State == JobStateEnum.Crash) && (JobTask?.Status ?? TaskStatus.WaitingToRun) != TaskStatus.Running)
                 {
-                    JobCancelToken = new CancellationTokenSource();
-                    JobTask = new Task(CreateAction(Job), JobCancelToken.Token, TaskCreationOptions.LongRunning);
-                }
+                    WaitCancelToken = new CancellationTokenSource();
 
-                JobTask.Start();
-            }
-            else
-            {
-                Job.Logger.Warn($"Cannot start job with state: {Job.State}");
+                    if (JobTask == null || JobTask.IsCompleted || JobTask.IsFaulted)
+                    {
+                        JobCancelToken = new CancellationTokenSource();
+                        JobTask = new Task(CreateAction(Job), JobCancelToken.Token, TaskCreationOptions.LongRunning);
+                    }
+
+                    JobTask.Start();
+                }
+                else
+                {
+                    Job.Logger.Warn($"Cannot start job with state: {Job.State}");
+                }
             }
         }
 
+        /// <summary>
+        /// Stop job
+        /// </summary>
+        /// <param name="force"></param>
         public void StopJob(bool force = false)
         {
-            Job.State = JobStateEnum.Stopping;
+            lock (_jobActionRygiel)
+            {
+                Job.State = JobStateEnum.Stopping;
 
-            if (WaitCancelToken?.Token.CanBeCanceled ?? false)
-                WaitCancelToken.Cancel(false);
-            if (JobCancelToken?.Token.CanBeCanceled ?? false)
-                JobCancelToken.Cancel(false);
+                if (WaitCancelToken?.Token.CanBeCanceled ?? false)
+                    WaitCancelToken.Cancel(false);
+                if (JobCancelToken?.Token.CanBeCanceled ?? false)
+                    JobCancelToken.Cancel(false);
 
-            Job.State = JobStateEnum.Stopped;
+                Job.State = JobStateEnum.Stopped;
+            }
+        }
+
+        /// <summary>
+        /// Is current job state allowing to wake action
+        /// </summary>
+        /// <returns></returns>
+        public bool CanBeWake()
+        {
+            JobStateEnum[] invalidStates = new[] { JobStateEnum.Stopping, JobStateEnum.Starting, JobStateEnum.NotSet, JobStateEnum.Working };
+
+            if (invalidStates.Contains(Job.State) || (WaitCancelToken?.IsCancellationRequested ?? true))
+                return false;
+            else
+                return true;
         }
 
         /// <summary>
@@ -58,14 +124,16 @@ namespace MaeveFramework.Scheduler.Abstractions
         /// </summary>
         public void Wake()
         {
-            if (Job.State == JobStateEnum.Stopping || Job.State == JobStateEnum.Stopped)
-                throw new Exception("Cannot wake stopped job!");
-            else if (Job.State == JobStateEnum.Starting || Job.State == JobStateEnum.NotStarted || Job.State == JobStateEnum.NotSet)
-                throw new Exception("Cannot wake not started job!");
-            else
+            if (!CanBeWake()) return;
+            if (Job.State == JobStateEnum.NotStarted) StartJob();
+            if (!CanBeWake()) return;
+            lock (_jobActionRygiel)
             {
-                Job.State = JobStateEnum.Wake;
-                WaitCancelToken?.Cancel(false);
+                if (CanBeWake())
+                {
+                    Job.State = JobStateEnum.Wake;
+                    WaitCancelToken?.Cancel(false);
+                }
             }
         }
 
@@ -86,12 +154,12 @@ namespace MaeveFramework.Scheduler.Abstractions
                     Job.Logger.Debug($"Job {Job.Name} started, run scheduled at {Job.NextRun}");
 
                     if (JobCancelToken.Token.IsCancellationRequested)
-                        Job.Logger.Debug("Unable to start Job, JobCancelToken requested!");
+                        Job.Logger.Trace("Unable to start Job, JobCancelToken requested!");
 
                     Job.State = JobStateEnum.Started;
 
                     if (JobTask.IsCompleted)
-                        Job.Logger.Debug("Job task is completed");
+                        Job.Logger.Trace("Job task is completed");
 
                     while (!JobCancelToken.IsCancellationRequested)
                     {
@@ -100,37 +168,36 @@ namespace MaeveFramework.Scheduler.Abstractions
                             break;
                         }
 
-                        lock (_jobActionRygiel)
+                        Int32 waitMsInt32 = 0;
+                        if (!JobCancelToken.IsCancellationRequested)
                         {
-                            if (Job.Schedule.CanRun() || Job.State == JobStateEnum.Wake)
+                            lock (_jobActionRygiel)
                             {
-                                try
+                                if (Job.Schedule.IsNow() || Job.State == JobStateEnum.Wake)
                                 {
-                                    if (Job.State == JobStateEnum.Wake)
-                                        Job.Logger.Debug("Job is waking up");
+                                    try
+                                    {
+                                        if (Job.State == JobStateEnum.Wake)
+                                            Job.Logger.Debug("Job is waking up");
 
-                                    // Job
-                                    Job.State = JobStateEnum.Working;
-                                    job.LastRun = DateTime.Now;
-                                    Job.Job();
+                                        // Job
+                                        Job.State = JobStateEnum.Working;
+                                        job.LastRun = DateTime.Now;
+                                        Job.Job();
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        Job.Logger.Error(ex, $"Exception on execution of job: {Job.Name}");
+                                    }
+                                    finally
+                                    {
+                                        Job.NextRun = Job.Schedule.GetNext();
+                                        Job.Logger.Debug($"Job {Job.Name} complete, next run: {Job.NextRun}");
+                                    }
                                 }
-                                catch (Exception ex)
-                                {
-                                    Job.Logger.Error(ex, $"Exception on execution of job: {Job.Name}");
-                                }
-                                finally
-                                {
-                                    Job.NextRun = Job.Schedule.GetNextRun();
-                                    Job.Logger.Debug($"Job {Job.Name} complete, next run: {Job.NextRun}");
-                                }
-                            }
 
-                            if (Job.State == JobStateEnum.Stopping || Job.State == JobStateEnum.Stopped || JobCancelToken.Token.IsCancellationRequested)
-                                break;
-
-                            try
-                            {
-                                Job.State = JobStateEnum.Idle;
+                                if (Job.State == JobStateEnum.Stopping || Job.State == JobStateEnum.Stopped || JobCancelToken.Token.IsCancellationRequested)
+                                    break;
 
                                 if (!JobCancelToken.IsCancellationRequested)
                                 {
@@ -138,20 +205,27 @@ namespace MaeveFramework.Scheduler.Abstractions
                                         WaitCancelToken = new CancellationTokenSource();
 
                                     double waitMs = Job.NextRun.Subtract(DateTime.Now).TotalMilliseconds;
-                                    Int32 waitMsInt32 = (waitMs > Int32.MaxValue)
+                                    waitMsInt32 = (waitMs > Int32.MaxValue)
                                     ? Int32.MaxValue
                                     : Convert.ToInt32(waitMs);
-
-                                    JobTask.Wait(waitMsInt32, WaitCancelToken.Token);
                                 }
                             }
-                            catch (Exception ex)
+                        }
+
+                        try
+                        {
+                            if (!JobCancelToken.IsCancellationRequested)
                             {
-                                if (!JobCancelToken.IsCancellationRequested && !WaitCancelToken.IsCancellationRequested)
-                                {
-                                    Job.Logger.Error(ex, "Exception on waiting handle, waiting 3 seconds.");
-                                    JobCancelToken.Token.WaitHandle.WaitOne(3.Seconds());
-                                }
+                                Job.State = JobStateEnum.Idle;
+                                JobTask.Wait(waitMsInt32, WaitCancelToken.Token);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            if (!JobCancelToken.IsCancellationRequested && !WaitCancelToken.IsCancellationRequested)
+                            {
+                                Job.Logger.Error(ex, "Exception on waiting handle, waiting 3 seconds.");
+                                JobCancelToken.Token.WaitHandle.WaitOne(3.Seconds());
                             }
                         }
                     }

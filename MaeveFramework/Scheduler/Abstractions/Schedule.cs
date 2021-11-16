@@ -55,6 +55,10 @@ namespace MaeveFramework.Scheduler.Abstractions
             _logger = Logger.LoggingManager.GetLogger(nameof(Schedule));
         }
 
+        /// <summary>
+        /// Get shcedule text representation
+        /// </summary>
+        /// <returns></returns>
         public string GetScheduleDescription()
         {
             string description = string.Empty;
@@ -89,7 +93,13 @@ namespace MaeveFramework.Scheduler.Abstractions
             return description;
         }
 
-        public DateTime GetNextRun(bool ignoreRepeat = false, DateTime? calculateFrom = null)
+        /// <summary>
+        /// Calculate next Schedule time window
+        /// </summary>
+        /// <param name="ignoreRepeat"></param>
+        /// <param name="calculateFrom"></param>
+        /// <returns>DateTime for next schedule time window</returns>
+        public DateTime GetNext(bool ignoreRepeat = false, DateTime? calculateFrom = null)
         {
             _logger.Trace($"{nameof(GetNextRun)} {nameof(ignoreRepeat)}: {ignoreRepeat} {nameof(calculateFrom)} : {calculateFrom} {nameof(Schedule)}: {this}");
 
@@ -106,7 +116,7 @@ namespace MaeveFramework.Scheduler.Abstractions
             if (!ignoreRepeat && Repeat.HasValue)
                 dt = dt.Add(Repeat.Value);
 
-            if (!CanRun(dt))
+            if (!IsNow(dt))
             {
                 if (DaysOfMonth?.Length > 0)
                 {
@@ -138,7 +148,17 @@ namespace MaeveFramework.Scheduler.Abstractions
             return dt;
         }
 
-        public bool CanRun(DateTime? calculateFrom = null)
+        /// <inheritdoc cref="GetNext(bool, DateTime?)" />
+        /// <see cref="GetNext(bool, DateTime?) "/>
+        [Obsolete]
+        public DateTime GetNextRun(bool ignoreRepeat = false, DateTime? calculateFrom = null) => GetNext(ignoreRepeat, calculateFrom);
+
+        /// <summary>
+        /// Make calculation for schedule to check is currently is in configured time window
+        /// </summary>
+        /// <param name="calculateFrom">(Optional) DateTime for calculation. Default: DateTime.Now</param>
+        /// <returns>True if schedule is in given time window</returns>
+        public bool IsNow(DateTime? calculateFrom = null)
         {
             if (Never)
             {
@@ -169,6 +189,17 @@ namespace MaeveFramework.Scheduler.Abstractions
             return true;
         }
 
+        /// <inheritdoc cref="IsNow(DateTime?)"/>
+        /// <see cref="IsNow(DateTime?)" />
+        [Obsolete]
+        public bool CanRun(DateTime? calculateFrom = null) => IsNow(calculateFrom);
+
+        /// <summary>
+        /// Get DateTime for next day for given weekday
+        /// </summary>
+        /// <param name="daysOfWeek"></param>
+        /// <param name="fromDT"></param>
+        /// <returns></returns>
         public static DateTime GetNextWeekDayDateTimeFromWeekArray(DayOfWeek[] daysOfWeek, DateTime fromDT)
         {
             foreach (var dtw in daysOfWeek.OrderByDescending(x => x))
@@ -179,6 +210,12 @@ namespace MaeveFramework.Scheduler.Abstractions
             return fromDT;
         }
 
+        /// <summary>
+        /// Get DateTime for next month day
+        /// </summary>
+        /// <param name="days"></param>
+        /// <param name="fromDT"></param>
+        /// <returns></returns>
         public static DateTime GetNextMonthDayDateTimeFromDaysArray(int[] days, DateTime fromDT)
         {
             var dates = days.Select(x => new DateTime(fromDT.Year, fromDT.Month, x)).OrderBy(o => o);
@@ -187,6 +224,12 @@ namespace MaeveFramework.Scheduler.Abstractions
             else return new DateTime(fromDT.AddMonths(1).Year, fromDT.AddMonths(1).Month, dates.First().Day);
         }
 
+        /// <summary>
+        /// Get DateTime for next day for given weekday
+        /// </summary>
+        /// <param name="start"></param>
+        /// <param name="day"></param>
+        /// <returns></returns>
         public static DateTime GetNextWeekday(DateTime start, DayOfWeek day)
         {
             // The (... + 7) % 7 ensures we end up with a value in the range [0, 6]
@@ -194,6 +237,13 @@ namespace MaeveFramework.Scheduler.Abstractions
             return start.AddDays(daysToAdd);
         }
 
+        /// <summary>
+        /// Check if given datetime is given TimeSpan range
+        /// </summary>
+        /// <param name="start"></param>
+        /// <param name="end"></param>
+        /// <param name="now"></param>
+        /// <returns></returns>
         public static bool IsTimeBetwean(TimeSpan start, TimeSpan end, DateTime now)
         {
             if ((now.TimeOfDay >= start) && (now.TimeOfDay <= end)) return true;
@@ -201,7 +251,7 @@ namespace MaeveFramework.Scheduler.Abstractions
         }
 
         /// <summary>
-        /// 
+        /// Make schedule text representation
         /// </summary>
         /// <param name="scheduleString">START_DT|END_DT|DayOfWeek(1,7)|DaysOfMonths(1,31)|Repeat(TS)|Never</param>
         /// <returns></returns>
@@ -210,14 +260,28 @@ namespace MaeveFramework.Scheduler.Abstractions
             return ScheduleString.Parse(this);
         }
 
+        /// <summary>
+        /// Check is given object is a Schedule with same parameters
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <returns></returns>
         public override bool Equals(object obj)
         {
-            Schedule a = obj as Schedule;
-            Schedule b = this;
-
-            return string.Equals(a.ToString(), b.ToString(), StringComparison.InvariantCultureIgnoreCase);
+            if (obj is Schedule a)
+            {
+                Schedule b = this;
+                return string.Equals(a.ToString(), b.ToString(), StringComparison.InvariantCultureIgnoreCase);
+            }
+            else
+            {
+                return base.Equals(obj);
+            }
         }
 
+        /// <summary>
+        /// Get Schedule hash code
+        /// </summary>
+        /// <returns></returns>
         public override int GetHashCode()
         {
             int hash = (Convert.ToInt32(Always) + Convert.ToInt32(Never));
