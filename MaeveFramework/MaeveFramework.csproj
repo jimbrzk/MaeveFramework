@@ -8,7 +8,7 @@
     <PackageTags>Helpers, .NET, Plugins, Schduler</PackageTags>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <RepositoryType>git</RepositoryType>
-    <PackageProjectUrl>https://github.com/kubala156/MaeveFramework</PackageProjectUrl>
+    <PackageProjectUrl>https://gitlab.com/kubala156/MaeveFramework</PackageProjectUrl>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <Copyright>MIT License © 2020</Copyright>
     <SignAssembly>true</SignAssembly>
