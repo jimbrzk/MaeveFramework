@@ -16,7 +16,7 @@ before_script:
 build:
   stage: build
   script:
-    - 'dotnet build --no-restore'
+    - 'dotnet build --no-restore --configuration Release'
   artifacts:
     paths:
       - "$SOURCE_CODE_PATH$RELEASE_DIRECTORY/*.nupkg"
