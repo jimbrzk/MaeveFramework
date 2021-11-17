@@ -9,6 +9,7 @@ namespace MaeveFramework.Logger.Abstractions
     /// </summary>
     public enum LoggingLevelEnum
     {
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
         Debug,
         Error,
         Fatal,
@@ -16,6 +17,7 @@ namespace MaeveFramework.Logger.Abstractions
         Off,
         Trace,
         Warn
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
     }
 
     /// <summary>
@@ -37,6 +39,9 @@ namespace MaeveFramework.Logger.Abstractions
             SelectedLevel = level;
         }
 
+        /// <summary>
+        /// Is Debug levle enabled
+        /// </summary>
         public bool IsDebugEnabled
         {
             get
@@ -47,6 +52,9 @@ namespace MaeveFramework.Logger.Abstractions
             }
         }
 
+        /// <summary>
+        /// Is Error level enabled
+        /// </summary>
         public bool IsErrorEnabled
         {
             get
@@ -57,6 +65,9 @@ namespace MaeveFramework.Logger.Abstractions
             }
         }
 
+        /// <summary>
+        /// Is Fatal level enabled
+        /// </summary>
         public bool IsFatalEnabled
         {
             get
@@ -67,6 +78,9 @@ namespace MaeveFramework.Logger.Abstractions
             }
         }
 
+        /// <summary>
+        /// Is info level enabled
+        /// </summary>
         public bool IsInfoEnabled
         {
             get
@@ -77,6 +91,9 @@ namespace MaeveFramework.Logger.Abstractions
             }
         }
 
+        /// <summary>
+        /// Is Trace level enabled
+        /// </summary>
         public bool IsTraceEnabled
         {
             get
@@ -87,6 +104,9 @@ namespace MaeveFramework.Logger.Abstractions
             }
         }
 
+        /// <summary>
+        /// Is Warn level enabled
+        /// </summary>
         public bool IsWarnEnabled
         {
             get

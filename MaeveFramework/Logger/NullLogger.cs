@@ -5,6 +5,7 @@ using System.Text;
 
 namespace MaeveFramework.Logger
 {
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
     public class NullLogger : LogLevel, ILogger
     {
         public NullLogger(string loggerName = null, LoggingLevelEnum? logLevel = null) { }
@@ -84,4 +85,5 @@ namespace MaeveFramework.Logger
             return;
         }
     }
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
 }

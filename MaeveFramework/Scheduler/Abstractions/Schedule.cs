@@ -5,6 +5,9 @@ using System.Text;
 
 namespace MaeveFramework.Scheduler.Abstractions
 {
+    /// <summary>
+    /// Schedule class
+    /// </summary>
     public class Schedule
     {
         /// <summary>
@@ -38,6 +41,15 @@ namespace MaeveFramework.Scheduler.Abstractions
 
         private readonly MaeveFramework.Logger.Abstractions.ILogger _logger;
 
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="start">Start schedule from</param>
+        /// <param name="end">End schedule at</param>
+        /// <param name="daysOfWeek">Days of week for schedule</param>
+        /// <param name="daysOfMonth">Days of month for shcedule</param>
+        /// <param name="repeat">Repeat</param>
+        /// <param name="never">Never</param>
         public Schedule(TimeSpan? start = null, TimeSpan? end = null, DayOfWeek[] daysOfWeek = null, int[] daysOfMonth = null, TimeSpan? repeat = null, bool never = false)
         {
             _logger = Logger.LoggingManager.GetLogger(nameof(Schedule));
@@ -50,6 +62,9 @@ namespace MaeveFramework.Scheduler.Abstractions
             Never = never;
         }
 
+        /// <summary>
+        /// Schedule constructor
+        /// </summary>
         public Schedule()
         {
             _logger = Logger.LoggingManager.GetLogger(nameof(Schedule));
@@ -253,7 +268,6 @@ namespace MaeveFramework.Scheduler.Abstractions
         /// <summary>
         /// Make schedule text representation
         /// </summary>
-        /// <param name="scheduleString">START_DT|END_DT|DayOfWeek(1,7)|DaysOfMonths(1,31)|Repeat(TS)|Never</param>
         /// <returns></returns>
         public override string ToString()
         {
