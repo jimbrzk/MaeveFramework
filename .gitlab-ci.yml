@@ -1,9 +1,9 @@
 image: mcr.microsoft.com/dotnet/sdk:6.0
 variables:
-  RELEASE_DIRECTORY: './MaeveFramework/bin/Release'
+  RELEASE_DIRECTORY: 'MaeveFramework/bin/Release'
   OBJECTS_DIRECTORY: 'obj'
   NUGET_PACKAGES_DIRECTORY: '.nuget'
-  SOURCE_CODE_PATH: 'MaeveFramework'
+  SOURCE_CODE_PATH: 'MaeveFramework/'
 cache:
   key: "$CI_JOB_STAGE-$CI_COMMIT_REF_SLUG"
   paths:
