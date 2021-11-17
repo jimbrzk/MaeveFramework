@@ -4,6 +4,9 @@ using System.Text;
 
 namespace MaeveFramework.Logger.Abstractions
 {
+    /// <summary>
+    /// Logging level enum
+    /// </summary>
     public enum LoggingLevelEnum
     {
         Debug,
@@ -15,10 +18,20 @@ namespace MaeveFramework.Logger.Abstractions
         Warn
     }
 
+    /// <summary>
+    /// LogLevel abstraction
+    /// </summary>
     public abstract class LogLevel
     {
+        /// <summary>
+        /// Selected log level
+        /// </summary>
         public LoggingLevelEnum? SelectedLevel { get; private set; }
 
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="level"></param>
         public LogLevel(LoggingLevelEnum? level = null)
         {
             SelectedLevel = level;

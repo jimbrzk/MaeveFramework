@@ -235,6 +235,10 @@ namespace MaeveFramework.Scheduler
             }
         }
 
+        /// <summary>
+        /// Remove job with GUID
+        /// </summary>
+        /// <param name="jobName"></param>
         public static void RemoveJob(string jobName)
         {
             lock (_jobsLocker)

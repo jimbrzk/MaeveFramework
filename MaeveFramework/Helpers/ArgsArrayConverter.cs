@@ -10,6 +10,12 @@ namespace MaeveFramework.Helpers
     /// </summary>
     public static class ArgsArrayConverter
     {
+        /// <summary>
+        /// Convert array to dict
+        /// </summary>
+        /// <param name="args"></param>
+        /// <param name="prefix"></param>
+        /// <returns></returns>
         public static Dictionary<string, string> ArgsToDictionary(this string[] args, string prefix = "-")
         {
             Dictionary<string, string> dict = new Dictionary<string, string>();

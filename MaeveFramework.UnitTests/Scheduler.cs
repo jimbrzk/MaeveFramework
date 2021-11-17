@@ -102,7 +102,7 @@ namespace MaeveFramework.UnitTests
         {
             Schedule schedule = new Schedule(repeat: 10.Seconds());
             Assert.AreEqual("||||00:00:10|False", ScheduleString.Parse(schedule), "SS Parse failed");
-            Assert.IsTrue(schedule.CanRun(), "Can't run schedule");
+            Assert.IsTrue(schedule.IsNow(), "Can't run schedule");
         }
 
         [TestMethod]
@@ -110,7 +110,7 @@ namespace MaeveFramework.UnitTests
         {
             Schedule schedule = new Schedule(repeat: 10.Seconds());
             Assert.AreEqual(ScheduleString.Parse("||||00:00:10|False"), schedule, "SS Parse failed");
-            Assert.IsTrue(schedule.CanRun(), "Can't run schedule");
+            Assert.IsTrue(schedule.IsNow(), "Can't run schedule");
         }
 
         [TestMethod]
@@ -118,7 +118,7 @@ namespace MaeveFramework.UnitTests
         {
             Schedule schedule = new Schedule(repeat: 10.Seconds(), start: 8.Hours(), end: 10.Hours());
             Assert.AreEqual(ScheduleString.Parse("08:00:00|10:00:00|||00:00:10|False"), schedule, "SS Parse failed");
-            Assert.IsFalse(schedule.CanRun(new DateTime(2020, 1, 1, 6, 0, 0)), "Can't run schedule"); // because scheduls is from 8 to 10 but we checking for 6
+            Assert.IsFalse(schedule.IsNow(new DateTime(2020, 1, 1, 6, 0, 0)), "Can't run schedule"); // because scheduls is from 8 to 10 but we checking for 6
         }
 
         [TestMethod]
@@ -127,21 +127,21 @@ namespace MaeveFramework.UnitTests
             Schedule schedule = new Schedule(start: 8.Hours(), end: 10.Hours(), daysOfWeek: new DayOfWeek[] { DayOfWeek.Monday }, daysOfMonth: new int[] { 1, 2, 3, 4, 5, 6, 7 });
             Assert.AreEqual(ScheduleString.Parse("08:00:00|10:00:00|Monday|1,2,3,4,5,6,7||False"), schedule, "SS Parse failed");
             DateTime testDate = new DateTime(2020, 1, 6, 7, 0, 0);
-            Assert.IsFalse(schedule.CanRun(testDate), "Shcedule run at invalid time at {0}, case {1}", testDate, 1);
+            Assert.IsFalse(schedule.IsNow(testDate), "Shcedule run at invalid time at {0}, case {1}", testDate, 1);
             testDate = new DateTime(2020, 1, 6, 9, 0, 0);
-            Assert.IsTrue(schedule.CanRun(testDate), "Can't run schedule at {0}, case {1}", testDate, 2);
+            Assert.IsTrue(schedule.IsNow(testDate), "Can't run schedule at {0}, case {1}", testDate, 2);
             testDate = new DateTime(2020, 1, 6, 11, 0, 0);
-            Assert.IsFalse(schedule.CanRun(testDate), "Shcedule run at invalid time at {0}, case {1}", testDate, 3);
+            Assert.IsFalse(schedule.IsNow(testDate), "Shcedule run at invalid time at {0}, case {1}", testDate, 3);
             testDate = new DateTime(2020, 1, 12, 9, 0, 0);
-            Assert.IsFalse(schedule.CanRun(testDate), "Shcedule run at invalid time at {0}, case {1}", testDate, 4);
+            Assert.IsFalse(schedule.IsNow(testDate), "Shcedule run at invalid time at {0}, case {1}", testDate, 4);
             testDate = new DateTime(2020, 1, 12, 11, 0, 0);
-            Assert.IsFalse(schedule.CanRun(testDate), "Shcedule run at invalid time at {0}, case {1}", testDate, 5);
+            Assert.IsFalse(schedule.IsNow(testDate), "Shcedule run at invalid time at {0}, case {1}", testDate, 5);
             testDate = new DateTime(2020, 1, 12, 6, 0, 0);
-            Assert.IsFalse(schedule.CanRun(testDate), "Shcedule run at invalid time at {0}, case {1}", testDate, 6);
+            Assert.IsFalse(schedule.IsNow(testDate), "Shcedule run at invalid time at {0}, case {1}", testDate, 6);
             testDate = new DateTime(2020, 1, 5, 9, 0, 0);
-            Assert.IsFalse(schedule.CanRun(testDate), "Shcedule run at invalid time at {0}, case {1}", testDate, 7);
+            Assert.IsFalse(schedule.IsNow(testDate), "Shcedule run at invalid time at {0}, case {1}", testDate, 7);
             testDate = new DateTime(2020, 1, 7, 6, 0, 0);
-            Assert.IsFalse(schedule.CanRun(testDate), "Shcedule run at invalid time at {0}, case {1}", testDate, 8);
+            Assert.IsFalse(schedule.IsNow(testDate), "Shcedule run at invalid time at {0}, case {1}", testDate, 8);
         }
 
         [TestMethod]
@@ -150,18 +150,18 @@ namespace MaeveFramework.UnitTests
             DateTime testDate = new DateTime(2020, 1, 5, 7, 0, 0);
 
             Schedule schedule3 = ScheduleString.Parse("08:00:00|10:00:00|Monday||28.00:00:00|False");
-            Assert.IsFalse(schedule3.CanRun(testDate), "Schedule too soon");
+            Assert.IsFalse(schedule3.IsNow(testDate), "Schedule too soon");
 
-            var next3 = schedule3.GetNextRun(calculateFrom: testDate);
-            Assert.IsTrue(schedule3.CanRun(next3), "Can't run at {0}", next3);
+            var next3 = schedule3.GetNext(calculateFrom: testDate);
+            Assert.IsTrue(schedule3.IsNow(next3), "Can't run at {0}", next3);
 
-            Assert.IsFalse(schedule3.CanRun(next3.AddHours(4)), "Schedule too late");
+            Assert.IsFalse(schedule3.IsNow(next3.AddHours(4)), "Schedule too late");
 
-            var next333 = schedule3.GetNextRun(calculateFrom: next3);
-            Assert.IsTrue(schedule3.CanRun(next333), "Can't run at {0}", next333);
+            var next333 = schedule3.GetNext(calculateFrom: next3);
+            Assert.IsTrue(schedule3.IsNow(next333), "Can't run at {0}", next333);
 
-            var next33333 = schedule3.GetNextRun(calculateFrom: testDate.AddDays(1).AddSeconds(1));
-            Assert.IsTrue(schedule3.CanRun(next33333), "Can't run at {0}", next33333);
+            var next33333 = schedule3.GetNext(calculateFrom: testDate.AddDays(1).AddSeconds(1));
+            Assert.IsTrue(schedule3.IsNow(next33333), "Can't run at {0}", next33333);
         }
 
         [TestMethod]
@@ -171,9 +171,9 @@ namespace MaeveFramework.UnitTests
             DateTime testDate = new DateTime(2020, 1, 6, 8, 0, 0);
             Schedule schedule = ScheduleString.Parse("08:00:00|10:00:00|Monday|1,2,3,4,5,6||False");
 
-            Assert.IsTrue(schedule.CanRun(testDate), "Can't run schedule. Tested date: {0} Schedule: {1}", testDate, schedule);
-            DateTime nextDate = schedule.GetNextRun(calculateFrom: testDate);
-            Assert.IsTrue(schedule.CanRun(nextDate), "Can't run schedule. Tested date: {0} nextDate: {1} Schedule: {2}", testDate, nextDate, schedule);
+            Assert.IsTrue(schedule.IsNow(testDate), "Can't run schedule. Tested date: {0} Schedule: {1}", testDate, schedule);
+            DateTime nextDate = schedule.GetNext(calculateFrom: testDate);
+            Assert.IsTrue(schedule.IsNow(nextDate), "Can't run schedule. Tested date: {0} nextDate: {1} Schedule: {2}", testDate, nextDate, schedule);
 
             for (int d = 1; d < DateTime.DaysInMonth(testDate.Year, testDate.Month); d++)
             {
@@ -184,9 +184,9 @@ namespace MaeveFramework.UnitTests
                     DateTime testDateFor = nextTestDate.AddHours(h);
 
                     if (Schedule.IsTimeBetwean(schedule.Start.Value, schedule.End.Value, testDateFor) && testDateFor.DayOfWeek == DayOfWeek.Monday && schedule.DaysOfMonth.Contains(testDateFor.Day))
-                        Assert.IsTrue(schedule.CanRun(testDateFor), "Can't run schedule. Tested date: {0} Schedule: {1}", testDateFor, schedule);
+                        Assert.IsTrue(schedule.IsNow(testDateFor), "Can't run schedule. Tested date: {0} Schedule: {1}", testDateFor, schedule);
                     else
-                        Assert.IsFalse(schedule.CanRun(testDateFor), "Invalid date for run. Tested date: {0} Schedule: {1}", testDateFor, schedule);
+                        Assert.IsFalse(schedule.IsNow(testDateFor), "Invalid date for run. Tested date: {0} Schedule: {1}", testDateFor, schedule);
                 }
             }
         }
@@ -198,9 +198,9 @@ namespace MaeveFramework.UnitTests
             DateTime testDate = new DateTime(2020, 1, 6, 8, 0, 0);
             Schedule schedule = ScheduleString.Parse("08:00:00|10:00:00|Monday|||False");
 
-            Assert.IsTrue(schedule.CanRun(testDate), "Can't run schedule. Tested date: {0} Schedule: {1}", testDate, schedule);
-            DateTime nextDate = schedule.GetNextRun(calculateFrom: testDate);
-            Assert.IsTrue(schedule.CanRun(nextDate), "Can't run schedule. Tested date: {0} nextDate: {1} Schedule: {2}", testDate, nextDate, schedule);
+            Assert.IsTrue(schedule.IsNow(testDate), "Can't run schedule. Tested date: {0} Schedule: {1}", testDate, schedule);
+            DateTime nextDate = schedule.GetNext(calculateFrom: testDate);
+            Assert.IsTrue(schedule.IsNow(nextDate), "Can't run schedule. Tested date: {0} nextDate: {1} Schedule: {2}", testDate, nextDate, schedule);
 
             for (int d = 1; d < DateTime.DaysInMonth(testDate.Year, testDate.Month); d++)
             {
@@ -211,9 +211,9 @@ namespace MaeveFramework.UnitTests
                     DateTime testDateFor = nextTestDate.AddHours(h);
 
                     if (Schedule.IsTimeBetwean(schedule.Start.Value, schedule.End.Value, testDateFor) && testDateFor.DayOfWeek == DayOfWeek.Monday)
-                        Assert.IsTrue(schedule.CanRun(testDateFor), "Can't run schedule. Tested date: {0} Schedule: {1} Start in range: {2} End in range: {3}", testDateFor, schedule, (schedule.Start >= 8.Hours()), (schedule.End <= 10.Hours()));
+                        Assert.IsTrue(schedule.IsNow(testDateFor), "Can't run schedule. Tested date: {0} Schedule: {1} Start in range: {2} End in range: {3}", testDateFor, schedule, (schedule.Start >= 8.Hours()), (schedule.End <= 10.Hours()));
                     else
-                        Assert.IsFalse(schedule.CanRun(testDateFor), "Invalid date for run. Tested date: {0} Schedule: {1} Start in range: {2} End in range: {3}", testDateFor, schedule, (schedule.Start >= 8.Hours()), (schedule.End <= 10.Hours()));
+                        Assert.IsFalse(schedule.IsNow(testDateFor), "Invalid date for run. Tested date: {0} Schedule: {1} Start in range: {2} End in range: {3}", testDateFor, schedule, (schedule.Start >= 8.Hours()), (schedule.End <= 10.Hours()));
                 }
             }
         }
@@ -225,9 +225,9 @@ namespace MaeveFramework.UnitTests
             DateTime testDate = new DateTime(2020, 1, 6, 8, 0, 0);
             Schedule schedule = ScheduleString.Parse("08:00:00|10:00:00||||False");
 
-            Assert.IsTrue(schedule.CanRun(testDate), "Can't run schedule. Tested date: {0} Schedule: {1}", testDate, schedule);
-            DateTime nextDate = schedule.GetNextRun(calculateFrom: testDate);
-            Assert.IsTrue(schedule.CanRun(nextDate), "Can't run schedule. Tested date: {0} nextDate: {1} Schedule: {2}", testDate, nextDate, schedule);
+            Assert.IsTrue(schedule.IsNow(testDate), "Can't run schedule. Tested date: {0} Schedule: {1}", testDate, schedule);
+            DateTime nextDate = schedule.GetNext(calculateFrom: testDate);
+            Assert.IsTrue(schedule.IsNow(nextDate), "Can't run schedule. Tested date: {0} nextDate: {1} Schedule: {2}", testDate, nextDate, schedule);
 
             for (int d = 1; d < DateTime.DaysInMonth(testDate.Year, testDate.Month); d++)
             {
@@ -238,9 +238,9 @@ namespace MaeveFramework.UnitTests
                     DateTime testDateFor = nextTestDate.AddHours(h);
 
                     if ((schedule.Start >= 8.Hours() && schedule.End <= 10.Hours()))
-                        Assert.IsTrue(schedule.CanRun(testDateFor), "Can't run schedule. Tested date: {0} Schedule: {1}", testDateFor, schedule);
+                        Assert.IsTrue(schedule.IsNow(testDateFor), "Can't run schedule. Tested date: {0} Schedule: {1}", testDateFor, schedule);
                     else
-                        Assert.IsFalse(schedule.CanRun(testDateFor), "Invalid date for run. Tested date: {0} Schedule: {1}", testDateFor, schedule);
+                        Assert.IsFalse(schedule.IsNow(testDateFor), "Invalid date for run. Tested date: {0} Schedule: {1}", testDateFor, schedule);
                 }
             }
         }
@@ -251,7 +251,7 @@ namespace MaeveFramework.UnitTests
             DateTime testDate = new DateTime(2020, 1, 6, 8, 0, 0);
             Schedule schedule = ScheduleString.Parse("08:00:00|10:00:00|Monday|1,2,3,4,5,6|26.00:00:00|False");
 
-            DateTime nextDate = schedule.GetNextRun(calculateFrom: testDate);
+            DateTime nextDate = schedule.GetNext(calculateFrom: testDate);
 
             Assert.IsTrue(nextDate.Subtract(testDate) >= new TimeSpan(0, 0, 0),
                 "Calculation for next date is in minus position. Calculated date: {0} Seconds to next run: {1} Calculated from date: {2} Scheudle: {3}",
@@ -259,7 +259,7 @@ namespace MaeveFramework.UnitTests
             Assert.IsTrue(nextDate.DayOfWeek == DayOfWeek.Monday, "Calculated next date is not Monday! Next date: {0} Scedule: {1}", nextDate, schedule);
             Assert.IsTrue((nextDate.Hour >= 8 && nextDate.Hour <= 10), "Next date is not in expected hours range! Next run: {0} Schedule: {1}", nextDate, schedule);
             Assert.IsTrue(nextDate.Month == 2, "Next date is not next month! Next date: {0} Schedule: {1}", nextDate, schedule);
-            Assert.IsTrue(schedule.CanRun(nextDate), "Can't run schedule! Next date {0} Schedule: {1}", nextDate, schedule);
+            Assert.IsTrue(schedule.IsNow(nextDate), "Can't run schedule! Next date {0} Schedule: {1}", nextDate, schedule);
         }
 
         [TestMethod]
