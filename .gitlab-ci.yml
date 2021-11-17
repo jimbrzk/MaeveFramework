@@ -22,18 +22,18 @@ build:
       - "$SOURCE_CODE_PATH$RELEASE_DIRECTORY/*.nupkg"
       - "$SOURCE_CODE_PATH$RELEASE_DIRECTORY/*/MaeveFramework.dll"
     expire_in: 1 week
-tests:
-  stage: test
-  script:
-    - 'dotnet test --no-restore --test-adapter-path:. --logger:"junit;LogFilePath=..\artifacts\{assembly}-test-result.xml;MethodFormat=Class;FailureBodyFormat=Verbose"'
-  artifacts:
-    when: always
-    paths:
-      - ./**/*test-result.xml
-    reports:
-      junit:
-        - ./**/*test-result.xml
-include:
-  - template: Security/Dependency-Scanning.gitlab-ci.yml
-  - template: Security/License-Scanning.gitlab-ci.yml
-  - template: Security/SAST.gitlab-ci.yml
+# tests:
+#   stage: test
+#   script:
+#     - 'dotnet test --no-restore --test-adapter-path:. --logger:"junit;LogFilePath=..\artifacts\{assembly}-test-result.xml;MethodFormat=Class;FailureBodyFormat=Verbose"'
+#   artifacts:
+#     when: always
+#     paths:
+#       - ./**/*test-result.xml
+#     reports:
+#       junit:
+#         - ./**/*test-result.xml
+# include:
+#   - template: Security/Dependency-Scanning.gitlab-ci.yml
+#   - template: Security/License-Scanning.gitlab-ci.yml
+#   - template: Security/SAST.gitlab-ci.yml
