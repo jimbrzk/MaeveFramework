@@ -45,16 +45,28 @@ namespace MaeveFramework.Scheduler.Abstractions
                 if (acceptedStates.Contains(state))
                     wait = false;
             };
-            Job.StateChange += stateEventHandlerAction;
 
-            while (wait)
+            try
             {
-                if (acceptedStates.Contains(Job.State)) return true;
-                if (end <= DateTime.Now) break;
-                Thread.Sleep(10.Miliseconds());
+                Job.StateChange += stateEventHandlerAction;
+
+                while (wait)
+                {
+                    if (acceptedStates.Contains(Job.State)) return true;
+                    if (end <= DateTime.Now) break;
+                    Thread.Sleep(10.Miliseconds());
+                }
             }
-            Job.StateChange -= stateEventHandlerAction;
-            return acceptedStates.Contains(Job.State);
+            catch (Exception ex)
+            {
+                Job.Logger.Error(ex, "Failed waiting for state!");
+            }
+            finally
+            {
+                Job.StateChange -= stateEventHandlerAction;
+            }
+
+            return acceptedStates.Contains(Job?.State ?? JobStateEnum.NotSet);
         }
 
         /// <inheritdoc cref="WaitForState(JobStateEnum[], TimeSpan?)" />

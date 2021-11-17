@@ -7,6 +7,7 @@ using System.Threading;
 using System.Linq;
 using System.Collections.Generic;
 using MaeveFramework.Scheduler.Abstractions;
+using System.Threading.Tasks;
 
 namespace MaeveFramework.UnitTests
 {
@@ -52,15 +53,19 @@ namespace MaeveFramework.UnitTests
 
     public class TestJob : JobBase<string>
     {
+        public int runCount;
+
         public TestJob(MaeveFramework.Scheduler.Abstractions.Schedule schedule, string options) : base(schedule, options)
         {
-
+            runCount = 0;
         }
 
         public override void Job()
         {
             Logger.Debug("test - job");
+            runCount++;
             base.Job();
+            Thread.Sleep(1000);
         }
 
         public override void OnStart()
@@ -258,6 +263,24 @@ namespace MaeveFramework.UnitTests
         }
 
         [TestMethod]
+        public void TestAddRemoveJobByName()
+        {
+            SchedulerManager.RemoveJob(nameof(TestJob));
+            Guid jobguid = SchedulerManager.CreateJob(new TestJob(ScheduleString.Parse("||||00:00:05|"), "testowa opcja"));
+            SchedulerManager.RemoveJob(nameof(TestJob));
+            Assert.IsTrue(SchedulerManager.Job<TestJob>() == null, "Job not removed!");
+        }
+
+        [TestMethod]
+        public void TestAddRemoveJobByGuid()
+        {
+            SchedulerManager.RemoveJob(nameof(TestJob));
+            Guid jobguid = SchedulerManager.CreateJob(new TestJob(ScheduleString.Parse("||||00:00:05|"), "testowa opcja"));
+            SchedulerManager.RemoveJob(jobguid);
+            Assert.IsTrue(SchedulerManager.Job<TestJob>() == null, "Job not removed!");
+        }
+
+        [TestMethod]
         [Timeout(6000)]
         public void JobCase1()
         {
@@ -289,7 +312,7 @@ namespace MaeveFramework.UnitTests
         }
 
         [TestMethod]
-        [Timeout(10000)]
+        [Timeout(13000)]
         public void JobCase3()
         {
             SchedulerManager.RemoveJob(nameof(TestExceptionJob));
@@ -300,7 +323,7 @@ namespace MaeveFramework.UnitTests
 
             Assert.IsTrue(SchedulerManager.JobController<TestExceptionJob>().WaitForState(JobStateEnum.Crash, 2.Seconds()), "Job is not in crash state. Current state: {0}", SchedulerManager.Job<TestExceptionJob>().State);
 
-            Assert.IsTrue(SchedulerManager.JobController<TestExceptionJob>().WaitForState(new [] { JobStateEnum.Working, JobStateEnum.Idle }, 2.Seconds()), "Job is not in valid state. Current state: {0}", SchedulerManager.Job<TestExceptionJob>().State);
+            Assert.IsTrue(SchedulerManager.JobController<TestExceptionJob>().WaitForState(new [] { JobStateEnum.Working, JobStateEnum.Idle }, 12.Seconds()), "Job is not in valid state. Current state: {0}", SchedulerManager.Job<TestExceptionJob>().State);
         }
 
         [TestMethod]
@@ -316,9 +339,34 @@ namespace MaeveFramework.UnitTests
             Assert.IsTrue(SchedulerManager.JobController<TestExceptionJob>().WaitForState(JobStateEnum.Idle, 5.Seconds()), "Job failed to get into Idle state in 5 seconds");
 
             SchedulerManager.JobController<TestExceptionJob>().Wake();
-            Assert.IsTrue(SchedulerManager.JobController<TestExceptionJob>().WaitForState(new [] { JobStateEnum.Wake, JobStateEnum.Working }, 3.Seconds()), "Job is not waking up in 3 seconds");
+
+            Thread.Sleep(3000);
 
             Assert.IsTrue(SchedulerManager.Job<TestExceptionJob>().LastRun.HasValue, "Job not executed after wakeup call", SchedulerManager.Job<TestExceptionJob>().LastRun?.ToString());
+        }
+
+        [TestMethod]
+        public void TestConcurency()
+        {
+            SchedulerManager.RemoveJob(nameof(TestJob));
+            Guid jobguid = SchedulerManager.CreateJob(new TestJob(ScheduleString.Parse("||||00:00:05|"), "start"));
+            Assert.IsTrue(SchedulerManager.Job<TestJob>() != null, "Failed to create job");
+
+            SchedulerManager.StartAllJobs();
+            SchedulerManager.JobController<TestJob>().WaitForState(JobStateEnum.Idle, 5.Seconds());
+            Assert.AreEqual(1, SchedulerManager.Job<TestJob>().runCount, "Job has not expected run count");
+
+            SchedulerManager.JobController<TestJob>().Wake();
+            SchedulerManager.JobController<TestJob>().WaitForState(JobStateEnum.Idle, 5.Seconds());
+            Assert.AreEqual(2, SchedulerManager.Job<TestJob>().runCount, "Job has not expected run count");
+
+            Task.Run(() => SchedulerManager.JobController<TestJob>().Wake());
+            Task.Run(() => SchedulerManager.JobController<TestJob>().Wake());
+            Thread.Sleep(300);
+            SchedulerManager.JobController<TestJob>().Wake();
+            SchedulerManager.JobController<TestJob>().WaitForState(new[] { JobStateEnum.Wake, JobStateEnum.Working }, 5.Seconds());
+            SchedulerManager.JobController<TestJob>().WaitForState(JobStateEnum.Idle, 5.Seconds());
+            Assert.AreEqual(3, SchedulerManager.Job<TestJob>().runCount, "Job has not expected run count");
         }
     }
 }

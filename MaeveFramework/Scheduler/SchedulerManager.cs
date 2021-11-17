@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using MaeveFramework.Scheduler.Abstractions;
 using MaeveFramework.Logger;
 using MaeveFramework.Logger.Abstractions;
+using System.Collections.Concurrent;
 
 namespace MaeveFramework.Scheduler
 {
@@ -17,7 +18,7 @@ namespace MaeveFramework.Scheduler
     /// </summary>
     public class SchedulerManager
     {
-        private static readonly List<JobController> _jobs = new List<JobController>();
+        private static readonly ConcurrentDictionary<Guid, JobController> _jobs = new ConcurrentDictionary<Guid, JobController>();
         private static object _jobsLocker = new object();
 
         private static ILogger _logger;
@@ -37,7 +38,7 @@ namespace MaeveFramework.Scheduler
             {
                 lock (_jobsLocker)
                 {
-                    return _jobs;
+                    return _jobs.Values.ToList();
                 }
             }
         }
@@ -55,7 +56,7 @@ namespace MaeveFramework.Scheduler
                 {
                     lock (_jobsLocker)
                     {
-                        return _jobs.FirstOrDefault(x => x.Job.JobType == jobType)?.Job;
+                        return _jobs.Values.FirstOrDefault(x => x.Job.JobType == jobType)?.Job;
                     }
                 }
                 catch (Exception ex)
@@ -79,7 +80,7 @@ namespace MaeveFramework.Scheduler
                 {
                     lock (_jobsLocker)
                     {
-                        return _jobs.FirstOrDefault(x => x.Job.Guid == jobGuid)?.Job;
+                        return _jobs.Values.FirstOrDefault(x => x.Job.Guid == jobGuid)?.Job;
                     }
                 }
                 catch (Exception ex)
@@ -95,45 +96,45 @@ namespace MaeveFramework.Scheduler
         /// </summary>
         /// <typeparam name="JobType">Job with JobBase base class</typeparam>
         /// <returns>Job</returns>
-        public static JobType Job<JobType>() where JobType : JobBase => _jobs.FirstOrDefault(x => x.Job.JobType == typeof(JobType))?.Job as JobType;
+        public static JobType Job<JobType>() where JobType : JobBase => _jobs.Values.FirstOrDefault(x => x.Job.JobType == typeof(JobType))?.Job as JobType;
         /// <summary>
         /// Get Job base
         /// </summary>
         /// <typeparam name="JobType"></typeparam>
         /// <returns></returns>
-        public static JobBase JobBase<JobType>() where JobType : JobBase => _jobs.FirstOrDefault(x => x.Job.JobType == typeof(JobType))?.Job as JobType;
+        public static JobBase JobBase<JobType>() where JobType : JobBase => _jobs.Values.FirstOrDefault(x => x.Job.JobType == typeof(JobType))?.Job as JobType;
         /// <summary>
         /// Get job by Guid
         /// </summary>
         /// <typeparam name="JobType">Job with JobBase base class</typeparam>
         /// <param name="jobGuid">Job GUID</param>
         /// <returns>Job object</returns>
-        public static JobType Job<JobType>(Guid jobGuid) where JobType : JobBase => _jobs.FirstOrDefault(x => x.Job.Guid == jobGuid)?.Job as JobType;
+        public static JobType Job<JobType>(Guid jobGuid) where JobType : JobBase => _jobs.Values.FirstOrDefault(x => x.Job.Guid == jobGuid)?.Job as JobType;
         /// <summary>
         /// Get Job base
         /// </summary>
         /// <param name="jobGuid"></param>
         /// <returns></returns>
-        public static JobBase JobBase(Guid jobGuid) => _jobs.FirstOrDefault(x => x.Job.Guid == jobGuid)?.Job;
+        public static JobBase JobBase(Guid jobGuid) => _jobs.Values.FirstOrDefault(x => x.Job.Guid == jobGuid)?.Job;
 
         /// <summary>
         /// Get job controller by job type
         /// </summary>
         /// <typeparam name="JobType"></typeparam>
         /// <returns>Job controller</returns>
-        public static JobController JobController<JobType>() where JobType : JobBase => _jobs.FirstOrDefault(x => x.Job.JobType == typeof(JobType));
+        public static JobController JobController<JobType>() where JobType : JobBase => _jobs.Values.FirstOrDefault(x => x.Job.JobType == typeof(JobType));
         /// <summary>
         /// Get job controller
         /// </summary>
         /// <param name="jobGuid">Job GUID</param>
         /// <returns>Job controller object with job object</returns>
-        public static JobController JobController(Guid jobGuid) => _jobs.FirstOrDefault(x => x.Job.Guid == jobGuid);
+        public static JobController JobController(Guid jobGuid) => _jobs.Values.FirstOrDefault(x => x.Job.Guid == jobGuid);
         /// <summary>
         /// Get job controller
         /// </summary>
         /// <param name="jobName">Job Name string</param>
         /// <returns>Job controller object with job object</returns>
-        public static JobController JobController(string jobName) => _jobs.FirstOrDefault(x => x.Job.Name == jobName);
+        public static JobController JobController(string jobName) => _jobs.Values.FirstOrDefault(x => x.Job.Name == jobName);
 
         /// <summary>
         /// Create new job to run
@@ -142,14 +143,12 @@ namespace MaeveFramework.Scheduler
         /// <exception cref="ArgumentException">If job allready added</exception>
         public static Guid CreateJob(JobBase job)
         {
-            if (_jobs.Any(x => x.Job.JobType == job.JobType))
+            if (_jobs.Values.Any(x => x.Job.JobType == job.JobType))
                 throw new ArgumentException($"Job with name {job.Name} is already exist!");
 
             lock (_jobsLocker)
             {
-                _jobs.Add(new JobController(job));
-
-                return job.Guid;
+                return _jobs.GetOrAdd(job.Guid, new JobController(job)).Job.Guid;
             }
         }
 
@@ -162,7 +161,7 @@ namespace MaeveFramework.Scheduler
             {
                 _logger.Debug("Starting all jobs");
 
-                foreach (var job in _jobs)
+                foreach (var job in _jobs.Values)
                 {
                     job.StartJob();
                 }
@@ -204,7 +203,7 @@ namespace MaeveFramework.Scheduler
             {
                 _logger.Debug("Stopping all jobs");
 
-                foreach (var job in _jobs)
+                foreach (var job in _jobs.Values)
                 {
                     job.StopJob(force);
                 }
@@ -240,14 +239,15 @@ namespace MaeveFramework.Scheduler
         {
             lock (_jobsLocker)
             {
-                if (!_jobs.Any(x => x.Job.Name == jobName)) return;
+                if (!_jobs.Values.Any(x => x.Job.Name == jobName)) return;
             }
 
             StopJob(jobName);
 
             lock (_jobsLocker)
             {
-                _jobs.RemoveAll(x => x.Job.Name == jobName);
+                var jobController = _jobs.Values.FirstOrDefault(x => x.Job.Name == jobName);
+                if (jobController != null) _jobs.TryRemove(jobController.Job.Guid, out jobController);
             }
         }
 
@@ -259,14 +259,14 @@ namespace MaeveFramework.Scheduler
         {
             lock (_jobsLocker)
             {
-                if (!_jobs.Any(x => x.Job.Guid == jobGuid)) return;
+                if (!_jobs.Values.Any(x => x.Job.Guid == jobGuid)) return;
             }
 
             StopJob(jobGuid);
 
             lock (_jobsLocker)
             {
-                _jobs.RemoveAll(x => x.Job.Guid == jobGuid);
+                _jobs.TryRemove(jobGuid, out JobController removed);
             }
         }
     }

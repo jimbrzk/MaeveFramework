@@ -67,7 +67,6 @@ This wake up call will execute the job ignoring the schedule. Be aware that new 
 
 ## + Helpers
 
-### - DynamicLinq
 ### - AbstrationsHelpers
 ```
 public void Knock()
