@@ -8,7 +8,7 @@ using System.Linq;
 using System.Collections.Generic;
 using MaeveFramework.Scheduler.Abstractions;
 
-namespace MaeveFramework.Tests.Core
+namespace MaeveFramework.UnitTests
 {
     public class TestExceptionJob : JobBase<string>
     {
