@@ -1,6 +1,6 @@
 image: mcr.microsoft.com/dotnet/sdk:6.0
 variables:
-  RELEASE_DIRECTORY: 'MaeveFramework/bin/Release'
+  RELEASE_DIRECTORY: 'bin/*'
   OBJECTS_DIRECTORY: 'obj'
   NUGET_PACKAGES_DIRECTORY: '.nuget'
   SOURCE_CODE_PATH: 'MaeveFramework/'
@@ -19,8 +19,8 @@ build:
     - 'dotnet build --no-restore'
   artifacts:
     paths:
-      - "$RELEASE_DIRECTORY/*.nupkg"
-      - "$RELEASE_DIRECTORY/*/MaeveFramework.dll"
+      - "$SOURCE_CODE_PATH$RELEASE_DIRECTORY/*.nupkg"
+      - "$SOURCE_CODE_PATH$RELEASE_DIRECTORY/*/MaeveFramework.dll"
     expire_in: 1 week
 tests:
   stage: test
