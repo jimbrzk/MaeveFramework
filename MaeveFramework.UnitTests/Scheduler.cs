@@ -288,7 +288,7 @@ namespace MaeveFramework.UnitTests
             Guid jobguid = SchedulerManager.CreateJob(new TestJob(ScheduleString.Parse("||||00:00:05|"), "testowa opcja"));
             Assert.IsTrue(SchedulerManager.Job<TestJob>() != null, "Failed to create job");
 
-            
+
             SchedulerManager.StartAllJobs();
             Thread.Sleep(2000);
             DateTime dt = DateTime.Now;
@@ -323,7 +323,7 @@ namespace MaeveFramework.UnitTests
 
             Assert.IsTrue(SchedulerManager.JobController<TestExceptionJob>().WaitForState(JobStateEnum.Crash, 2.Seconds()), "Job is not in crash state. Current state: {0}", SchedulerManager.Job<TestExceptionJob>().State);
 
-            Assert.IsTrue(SchedulerManager.JobController<TestExceptionJob>().WaitForState(new [] { JobStateEnum.Working, JobStateEnum.Idle }, 12.Seconds()), "Job is not in valid state. Current state: {0}", SchedulerManager.Job<TestExceptionJob>().State);
+            Assert.IsTrue(SchedulerManager.JobController<TestExceptionJob>().WaitForState(new[] { JobStateEnum.Working, JobStateEnum.Idle }, 12.Seconds()), "Job is not in valid state. Current state: {0}", SchedulerManager.Job<TestExceptionJob>().State);
         }
 
         [TestMethod]
@@ -367,6 +367,14 @@ namespace MaeveFramework.UnitTests
             SchedulerManager.JobController<TestJob>().WaitForState(new[] { JobStateEnum.Wake, JobStateEnum.Working }, 5.Seconds());
             SchedulerManager.JobController<TestJob>().WaitForState(JobStateEnum.Idle, 5.Seconds());
             Assert.AreEqual(3, SchedulerManager.Job<TestJob>().runCount, "Job has not expected run count");
+        }
+
+        [TestMethod]
+        public void TestScheduleWithoutEndTime()
+        {
+            var schedule = new Schedule(DateTime.Now.TimeOfDay, null, new[] { DateTime.Now.DayOfWeek }, null, 28.Days());
+            var next= schedule.GetNext();
+            
         }
     }
 }
